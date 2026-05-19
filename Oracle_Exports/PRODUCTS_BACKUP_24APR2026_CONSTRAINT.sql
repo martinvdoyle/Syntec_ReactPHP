@@ -1,0 +1,7 @@
+--------------------------------------------------------
+--  Constraints for Table PRODUCTS_BACKUP_24APR2026
+--------------------------------------------------------
+
+  ALTER TABLE "WEB"."PRODUCTS_BACKUP_24APR2026" MODIFY ("PRODUCT_NAME" NOT NULL ENABLE);
+  ALTER TABLE "WEB"."PRODUCTS_BACKUP_24APR2026" MODIFY ("SUPPLIER_ID" NOT NULL ENABLE);
+  ALTER TABLE "WEB"."PRODUCTS_BACKUP_24APR2026" MODIFY ("PRODUCT_ID" NOT NULL ENABLE);

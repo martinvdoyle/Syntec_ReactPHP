@@ -1,0 +1,10 @@
+--------------------------------------------------------
+--  Constraints for Table SUPPLIERS
+--------------------------------------------------------
+
+  ALTER TABLE "WEB"."SUPPLIERS" MODIFY ("SUPPLIER_ID" NOT NULL ENABLE);
+  ALTER TABLE "WEB"."SUPPLIERS" MODIFY ("SUPPLIER_NAME" NOT NULL ENABLE);
+  ALTER TABLE "WEB"."SUPPLIERS" ADD CHECK (deleted IN ('Y', 'N')) ENABLE;
+  ALTER TABLE "WEB"."SUPPLIERS" ADD CHECK (active IN ('Y', 'N')) ENABLE;
+  ALTER TABLE "WEB"."SUPPLIERS" ADD CONSTRAINT "PK_SUPPLIERS" PRIMARY KEY ("SUPPLIER_ID")
+  USING INDEX "WEB"."PK_SUPPLIERS"  ENABLE;

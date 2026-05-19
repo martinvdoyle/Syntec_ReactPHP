@@ -1,0 +1,200 @@
+﻿# Asset Copy Log
+
+Generated: 2026-05-19 23:43:35
+
+## Source
+- C:\Websites\Syntec_Live\Website_Files\#WORKSPACE_FILES#\assets\images
+
+## Destination
+- C:\Websites\Syntec_ReactPHP\public\assets\images
+
+
+## Copied entries (40)
+- FILE	Backgrounds/Lab_9_opaque.png
+- FILE	images_misc/Misc_100.jpg
+- FILE	images_misc/Misc_101.jpg
+- FILE	images_misc/Misc_102.jpg
+- FILE	images_misc/Misc_103.jpg
+- FILE	images_misc/Misc_104.jpg
+- FILE	images_misc/Misc_105.jpg
+- FILE	images_misc/Misc_106.jpg
+- FILE	images_misc/Misc_107.jpg
+- FILE	images_misc/Misc_108.jpg
+- FILE	images_misc/Misc_77.jpg
+- FILE	images_misc/Misc_78.jpg
+- FILE	images_misc/Misc_79.jpg
+- FILE	images_misc/Misc_80.jpg
+- FILE	images_misc/Misc_81.jpg
+- FILE	images_misc/Misc_82.jpg
+- FILE	images_misc/Misc_83.jpg
+- FILE	images_misc/Misc_84.jpg
+- FILE	images_misc/Misc_86.jpg
+- FILE	images_misc/Misc_87.jpg
+- FILE	images_misc/Misc_88.jpg
+- FILE	images_misc/Misc_89.jpg
+- FILE	images_misc/Misc_90.jpg
+- FILE	images_misc/Misc_91.jpg
+- FILE	images_misc/Misc_92.jpg
+- FILE	images_misc/Misc_93.jpg
+- FILE	images_misc/Misc_94.jpg
+- FILE	images_misc/Misc_95.jpg
+- FILE	images_misc/Misc_96.jpg
+- FILE	images_misc/Misc_97.jpg
+- FILE	images_misc/Misc_98.jpg
+- FILE	images_misc/Misc_99.jpg
+- FILE	ISO_13485_2016_Official.png
+- FILE	ISO_9001_2015_Official.png
+- DIR	Scientific/suppliers/
+- FILE	sliders/DNA/DNA_2.jpg
+- FILE	sliders/Home/Home_1_1800x700.jpg
+- FILE	sliders/Home/Home_2.jpg
+- FILE	sliders/Home/Home_5.jpg
+- FILE	Syntec_Group_Logo_Small.png
+
+## Missing entries (4)
+- Syntec_Group_Logo_Menu.png
+- Syntec_International_Logo_Menu.png
+- Syntec_Scientific_Logo_Menu.png
+- Syntec_SysLabs_Logo_Menu.png
+
+## Second Pass (Large Data Tables) - 2026-05-19 23:45:16
+- Files scanned: 7
+- Unique image path refs found: 131
+- Newly copied: 124
+- Already present: 0
+- Missing: 7
+
+### Newly copied
+- Backgrounds/Lab_10_opaque.png
+- Backgrounds/Lab_13_opaque.png
+- Backgrounds/Lab_14_opaque.png
+- Backgrounds/Lab_15_opaque.png
+- Backgrounds/Lab_16_opaque.png
+- Backgrounds/Lab_17_opaque.png
+- Backgrounds/Lab_18_opaque.png
+- Backgrounds/Lab_29_opaque.png
+- Backgrounds/Lab_3_opaque.png
+- Backgrounds/Lab_38_opaque.png
+- Backgrounds/Lab_4_opaque.png
+- Backgrounds/Lab_42_opaque.png
+- Backgrounds/Lab_44_opaque.png
+- Backgrounds/Lab_48_opaque.png
+- Backgrounds/Lab_49_opaque.png
+- Backgrounds/Lab_5_opaque.png
+- Backgrounds/Lab_50_opaque.png
+- Backgrounds/Lab_6_opaque.png
+- Backgrounds/Lab_7_opaque.png
+- Backgrounds/Lab_8_opaque.png
+- International/cytometry/Filcons_Max/Filcons_1.png
+- International/cytometry/Filcons_Max/Filcons_10.png
+- International/cytometry/Filcons_Max/Filcons_11.png
+- International/cytometry/Filcons_Max/Filcons_12.png
+- International/cytometry/Filcons_Max/Filcons_13.png
+- International/cytometry/Filcons_Max/Filcons_14.png
+- International/cytometry/Filcons_Max/Filcons_15.png
+- International/cytometry/Filcons_Max/Filcons_2.png
+- International/cytometry/Filcons_Max/Filcons_3.png
+- International/cytometry/Filcons_Max/Filcons_4.png
+- International/cytometry/Filcons_Max/Filcons_5.png
+- International/cytometry/Filcons_Max/Filcons_6.png
+- International/cytometry/Filcons_Max/Filcons_7.png
+- International/cytometry/Filcons_Max/Filcons_8.png
+- International/cytometry/Filcons_Max/Filcons_9.png
+- International/cytometry/Filcons_Max/Filcons_specs.png
+- International/cytometry/Filcons_Max/FilconsMax.pdf
+- International/cytometry/Filcons_Max/FilconsMax_1.png
+- International/cytometry/Filcons_Max/FilconsMax_2.png
+- International/cytometry/Filcons_Max/FilconsMax_3.png
+- International/cytometry/Filcons_Max/FilconsMax_4.png
+- International/cytometry/Filcons_Max/Filecons-1-0_406x310.png
+- International/cytometry/Filcons_Max/Filecons-1-1_406x310.png
+- International/cytometry/Filcons_Max/Medimax_video_4.jpg
+- International/cytometry/Medicons/Medicons.pdf
+- International/cytometry/Medicons/Medicons-1-1_406x310.png
+- International/cytometry/Medicons/Medimax_video_3.jpg
+- International/cytometry/Medicons/Medimax_video_3.mp4
+- International/cytometry/Medimachine_II/medimachine_II-0_406x310.png
+- International/cytometry/Medimachine_II/Medimachine-II-Brochure.pdf
+- International/cytometry/Medimachine_II/medimachine-II-UserManual.pdf
+- International/cytometry/MediMax_2/Medimax.pdf
+- International/homogenization/FASTH21/FASTH21_10.jpg
+- International/homogenization/FASTH21/FASTH21_11.jpg
+- International/homogenization/FASTH21/FASTH21_12.jpg
+- International/homogenization/FASTH21/FASTH21_13.jpg
+- International/homogenization/FASTH21/FASTH21_14.jpg
+- International/homogenization/FASTH21/FASTH21_15.jpg
+- International/homogenization/FASTH21/FASTH21_16.jpg
+- International/homogenization/FASTH21/FASTH21_17.jpg
+- International/homogenization/FASTH21/FASTH21_18.jpg
+- International/homogenization/FASTH21/FASTH21_19.jpg
+- International/homogenization/FASTH21/FASTH21_1b.png
+- International/homogenization/FASTH21/FASTH21_20.jpg
+- International/homogenization/FASTH21/FASTH21_21.jpg
+- International/homogenization/FASTH21/FASTH21_22.jpg
+- International/homogenization/FASTH21/FASTH21_23.jpg
+- International/homogenization/FASTH21/FASTH21_24.jpg
+- International/homogenization/FASTH21/FASTH21_25.jpg
+- International/homogenization/FASTH21/FASTH21_26.jpg
+- International/homogenization/FASTH21/FASTH21_27.jpg
+- International/homogenization/FASTH21/FASTH21_28.jpg
+- International/homogenization/FASTH21/FASTH21_29.jpg
+- International/homogenization/FASTH21/FASTH21_30.jpg
+- International/homogenization/FASTH21/FASTH21_7.jpg
+- International/homogenization/FASTH21/FASTH21_8.jpg
+- International/homogenization/FASTH21/FASTH21_9.jpg
+- International/homogenization/FASTH21/FASTH21_video_1.jpg
+- International/homogenization/FASTH21/FASTH21_video_1_compresssed.mp4
+- International/homogenization/FASTH21/FASTH21_video_2.jpg
+- International/homogenization/FASTH21/FASTH21_video_2_compresssed.mp4
+- International/homogenization/FASTH21/FASTH21_video_3.jpg
+- International/homogenization/FASTH21/FASTH21_video_3_compresssed.mp4
+- International/homogenization/FOODcon7/Foodcon7_0a_406x310.png
+- International/homogenization/FOODcon7/Foodcon7_6b_406x310.png
+- International/homogenization/FOODcon7/FOODcons_Max_video_1.jpg
+- International/homogenization/FOODcon7/FOODcons_Max_video_1.mp4
+- International/homogenization/FOODcon7/FOODcons_Max_video_2.jpg
+- International/homogenization/FOODcon7/FOODcons_Max_video_2.mp4
+- International/homogenization/FOODcon7/FOODcons_Max_video_3.jpg
+- International/homogenization/FOODcon7/FOODcons_Max_video_3.mp4
+- International/homogenization/Prypcons/Prypcons_2a_406x310.png
+- International/homogenization/Prypcons/RACK-adapter.jpg
+- International/homogenization/Prypcons/Racks_1.jpg
+- International/homogenization/Prypcons/Racks_2.jpg
+- International/surgery/MediBlue/MediBlue_0_406x310.png
+- International/surgery/Medigraft_A/Medigraft_A_2a_406x310.png
+- International/surgery/Medigraft_B/Medigraft_B_1a_406x310.png
+- pdf.png
+- Scientific/suppliers/arctiko/Accessories_Range.png
+- Scientific/suppliers/arctiko/Combi_Range.png
+- Scientific/suppliers/arctiko/Fridges_Range.png
+- Scientific/suppliers/arctiko/Refrigerators_Range.png
+- Scientific/suppliers/AxLab/AT-192-compressed.jpg
+- Scientific/suppliers/AxLab/AT-192-compressed.mp4
+- Scientific/suppliers/Cell_Marque/cell_marque-logo.png
+- Scientific/suppliers/Cell_Marque/Millipore.png
+- Scientific/suppliers/Milestone/Background_opaque.png
+- Scientific/suppliers/Milestone/FormSAFE_Safety.png
+- Scientific/suppliers/Milestone/MCC_Tissue.png
+- Scientific/suppliers/OptraScan/Background_opaque.png
+- Scientific/suppliers/ratiolab/Pipette_Tips_Refill_System_Usage.png
+- Scientific/suppliers/ratiolab/ratiolab_background_1.png
+- Scientific/suppliers/slee/Background_opaque.png
+- SysLabs/Biobarica/manual.pdf
+- SysLabs/biologicalinnovations/AutologIX_Applications.png
+- SysLabs/biologicalinnovations/ChondroHEAL_Applications.png
+- SysLabs/biologicalinnovations/ICCS_Applications.png
+- SysLabs/biologicalinnovations/IDRIA-AutologIX-Presentation-2023.pdf
+- SysLabs/biologicalinnovations/IdriaS_Applications.png
+- SysLabs/CTN/Pelvic_Trainer.png
+- SysLabs/EKF/LSSport-Data-EN-EU-Rev-1.0-10-2023.pdf
+- SysLabs/EKF/LSSport-FAQ-EN-EU-Rev-1.0-10-2023.pdf
+- SysLabs/EKF/LSSport-Manual-EN-EU-Rev-1.0-08-2023.pdf
+
+### Missing
+- images_misc/Lab_96_opaque.png
+- International/cytometry/Filcons_Max/Medimax_video_4.mp4
+- International/surgery/SyntMate/SyntMate_Blue
+- International/surgery/SyntMate/SyntMate_Green_Orange
+- SysLabs/biologicalinnovations/BIOMED
+- SysLabs/biologicalinnovations/Idria
+- SysLabs/CTN/X-GUN_Treatment

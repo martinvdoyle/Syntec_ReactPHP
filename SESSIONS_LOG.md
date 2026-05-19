@@ -97,3 +97,10 @@ User can provide starter package containing:
 ## Current Status
 - Awaiting user-provided legacy/reference directories and/or APEX export/region content.
 - No scaffold implementation started yet per user instruction to wait.
+
+## Credentials Handling Update (2026-05-19)
+- Added secure local credentials pattern in Syntec repo.
+- Created tracked template: `.env.example` (placeholders only).
+- Created local runtime file: `.env.local` (gitignored via existing `.env.*` rule).
+- Rule: no secrets in `AGENTS.md` or other tracked docs.
+- Action recommended: rotate temporary DB password after initial setup.
