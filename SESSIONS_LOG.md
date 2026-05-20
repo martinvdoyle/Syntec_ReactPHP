@@ -104,3 +104,54 @@ User can provide starter package containing:
 - Created local runtime file: `.env.local` (gitignored via existing `.env.*` rule).
 - Rule: no secrets in `AGENTS.md` or other tracked docs.
 - Action recommended: rotate temporary DB password after initial setup.
+
+## Phase 1 + Phase 2 Progress (2026-05-20)
+- Completed Phase 1 React scaffold in `Syntec_ReactPHP`:
+  - Vite + React (JavaScript)
+  - Tailwind CSS v4
+  - React Router shell
+  - Header / MegaMenu / MobileMenu / Footer placeholders
+  - Home / Suppliers / Products / Contact placeholder pages
+- Added API config layer using `VITE_API_BASE_URL`.
+- Verified frontend build (`npm run build`) succeeds.
+- Commit recorded:
+  - `a85f4b2 feat: phase 1 react scaffold with tailwind, router, layout, and placeholders`
+
+## Asset Migration Progress
+- Completed SQL-driven asset reference scan and selective copy from legacy image root into new `public/assets/images`.
+- Added log: `ASSET_COPY_LOG.md`.
+- Missing references identified and deferred to placeholder/fallback handling.
+
+## Phase 2 Backend/API + Menu Integration
+- Added PHP API scaffold:
+  - `api/config/cors.php`
+  - `api/config/db.php`
+  - `api/menu.php`
+- Added MySQL schema + seed script:
+  - `database/mysql/001_syntec_menu_items.sql`
+- Added frontend API fetch with fallback:
+  - `src/api/menu.js`
+  - `src/components/layout/Header.jsx` now fetches menu data from API.
+- Verified frontend build still passes after integration.
+
+## Operational Notes
+- Runtime note: local environment had Node/NPM conflicts due legacy NVM config; resolved to working state for scaffold/build.
+- Pending deployment step:
+  - Upload `api/` to `/public_html/syntec-dev/api/`
+  - Run `database/mysql/001_syntec_menu_items.sql` in `9ng6ht_syntecdev`.
+
+## Security / Config Note
+- For production-style config, PHP expects DB connection values from runtime environment variables:
+  - `SYNTEC_DB_HOST`
+  - `SYNTEC_DB_NAME`
+  - `SYNTEC_DB_USER`
+  - `SYNTEC_DB_PASS`
+- If hosting env vars are not available in Register365, fallback is to store these in a local non-committed PHP config include and require it from `api/config/db.php`.
+
+## DB Config Pattern Update (2026-05-20)
+- Reviewed `C:\Websites\ReactMembersWebsite_clean` DB pattern.
+- Syntec now supports same style via root local config include:
+  - `db-config.local.php` (gitignored, real secrets)
+  - `db-config.example.php` (tracked template)
+- `api/config/db.php` now loads `db-config.local.php` first, then falls back to env vars (`SYNTEC_DB_*`) if local file not present.
+- This aligns deployment behavior with existing Luttrellstown setup.

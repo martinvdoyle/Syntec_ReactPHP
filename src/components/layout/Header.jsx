@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { fetchMenu } from "../../api/menu";
 import MegaMenu from "../menus/MegaMenu";
 import MobileMenu from "../menus/MobileMenu";
 
@@ -12,7 +13,31 @@ const menuSeed = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const menuItems = useMemo(() => menuSeed, []);
+  const [menuItems, setMenuItems] = useState(menuSeed);
+
+  useEffect(() => {
+    let mounted = true;
+
+    fetchMenu("main").then((items) => {
+      if (mounted && Array.isArray(items) && items.length > 0) {
+        setMenuItems(items);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const standardItems = useMemo(
+    () => menuItems.filter((i) => i.menuType !== "mega"),
+    [menuItems]
+  );
+
+  const megaItems = useMemo(
+    () => menuItems.filter((i) => i.menuType === "mega"),
+    [menuItems]
+  );
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -23,11 +48,11 @@ export default function Header() {
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex">
-          {menuItems.map((item) => (
+          {standardItems.map((item) => (
             <Link
               key={item.id}
               className="text-sm font-medium text-slate-700 hover:text-[var(--syntec-blue)]"
-              to={item.route}
+              to={item.route || item.url || "#"}
             >
               {item.title}
             </Link>
@@ -43,7 +68,7 @@ export default function Header() {
         </button>
       </div>
 
-      <MegaMenu items={menuItems.filter((i) => i.menuType === "mega")} />
+      <MegaMenu items={megaItems} />
       <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} items={menuItems} />
     </header>
   );
