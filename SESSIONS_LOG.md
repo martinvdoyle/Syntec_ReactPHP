@@ -155,3 +155,14 @@ User can provide starter package containing:
   - `db-config.example.php` (tracked template)
 - `api/config/db.php` now loads `db-config.local.php` first, then falls back to env vars (`SYNTEC_DB_*`) if local file not present.
 - This aligns deployment behavior with existing Luttrellstown setup.
+
+## Suppliers Phase Update (2026-05-20)
+- Added suppliers schema script:
+  - `database/mysql/002_syntec_suppliers.sql`
+- Added suppliers API endpoint:
+  - `api/suppliers.php`
+- Added frontend suppliers client:
+  - `src/api/suppliers.js`
+- Replaced suppliers placeholder page with live API-driven supplier card listing:
+  - `src/pages/SuppliersPage.jsx`
+- Kept fallback supplier data and missing-image fallback behavior for resilience during migration.
