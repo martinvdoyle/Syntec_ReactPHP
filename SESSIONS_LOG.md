@@ -166,3 +166,49 @@ User can provide starter package containing:
 - Replaced suppliers placeholder page with live API-driven supplier card listing:
   - `src/pages/SuppliersPage.jsx`
 - Kept fallback supplier data and missing-image fallback behavior for resilience during migration.
+
+## Menu Migration Mini-Phase (2026-05-20)
+- Added Oracle menu migration helper script:
+  - `database/mysql/003_menu_items_migration_from_oracle.sql`
+- Updated menu API to return nested tree structure (`tree` with recursive `children`) while keeping flat `items` output.
+- Upgraded desktop menu rendering to multi-level flyout mega behavior:
+  - `src/components/menus/MegaMenu.jsx`
+- Upgraded mobile menu rendering to nested accordion behavior:
+  - `src/components/menus/MobileMenu.jsx`
+- Updated frontend menu client to consume `tree` output:
+  - `src/api/menu.js`
+
+### Deployment Note
+- Upload updated `api/menu.php` to hosting.
+- To migrate real Oracle menu rows:
+  1) load Oracle menu data into `syntec_menu_items_staging`
+  2) run `database/mysql/003_menu_items_migration_from_oracle.sql` transform steps
+  3) verify `/api/menu.php?menu_key=main` returns nested `tree`
+
+## Menu Import Automation Update (2026-05-20)
+- Added MySQL-ready converted import file:
+  - `database/mysql/003a_menu_items_staging_import.sql`
+- This file targets `syntec_menu_items_staging` directly and strips Oracle-only control lines.
+- Migration order now:
+  1) run `003_menu_items_migration_from_oracle.sql` section 1 (create staging)
+  2) import `003a_menu_items_staging_import.sql`
+  3) run section 3+4 of `003_menu_items_migration_from_oracle.sql`
+- Going forward, provide pre-converted MySQL import files for each Oracle table migration.
+
+## Session Date
+- 2026-05-20 (Europe/Dublin)
+
+## Addendum: Oracle Export and Icon Migration
+- Oracle exports location confirmed as canonical project source:
+  - `C:\Websites\Syntec_ReactPHP\Oracle_Exports`
+- Future migration/import tasks must check this folder first for table exports (`*_DATA_TABLE.sql`) and related DDL/constraint scripts.
+- Menu icon strategy updated to use React icon libraries instead of Oracle APEX/Font Awesome classes.
+- During APEX page conversion, any legacy `fa-*` icon usage must be converted to supported library keys in `syntec_menu_items.icon_class`.
+- Supported icon key format:
+  - `lucide:<icon-name>`
+  - `tabler:<icon-name>`
+- Example conversions:
+  - `fa-microscope` -> `tabler:microscope`
+  - `fa-network-wired` -> `lucide:network`
+  - `fa-head-side-virus` -> `tabler:virus`
+- Keep icon mapping consistent across desktop mega menu, non-mega dropdowns, and mobile menu.

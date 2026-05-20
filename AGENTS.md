@@ -206,6 +206,13 @@ Use:
 - Floating UI where useful
 - fetch or Axios
 
+Icon libraries used for menu/navigation icons:
+
+- Lucide gallery: https://lucide.dev/icons/
+- Lucide React package: https://www.npmjs.com/package/lucide-react
+- Tabler Icons gallery: https://tabler.io/icons
+- Tabler React package: https://www.npmjs.com/package/@tabler/icons-react
+
 Frontend responsibilities:
 
 - public pages
@@ -356,6 +363,22 @@ Suggested structure:
 ```
 
 Use `/legacy/` as reference only unless explicitly approved.
+
+---
+
+# Oracle Export Source
+
+All Oracle object exports for this project are stored in:
+
+```text
+C:\Websites\Syntec_ReactPHP\Oracle_Exports
+```
+
+Rules:
+
+- Treat this folder as the default source for Oracle table data, constraints, DDL, and PL/SQL references.
+- Before asking for export files, first check this folder for matching `*_DATA_TABLE.sql`, table DDL, and related constraint/index scripts.
+- Use these files to generate MySQL staging import scripts and migration scripts.
 
 ---
 

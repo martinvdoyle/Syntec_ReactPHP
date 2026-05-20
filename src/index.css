@@ -3,7 +3,7 @@
 :root {
   --syntec-navy: #0f2a3f;
   --syntec-teal: #0f6a79;
-  --syntec-blue: #1d6fa5;
+  --syntec-blue: #5ea2ea;
   --syntec-light: #f2f6f8;
 }
 
@@ -21,4 +21,17 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* APEX legacy icon shim: allows classes like "fa-custom fa-network-wired" */
+.fa-custom {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+}
+
+.fa-custom::before {
+  content: var(--fa);
 }

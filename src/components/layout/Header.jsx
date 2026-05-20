@@ -18,7 +18,7 @@ export default function Header() {
   useEffect(() => {
     let mounted = true;
 
-    fetchMenu("main").then((items) => {
+    fetchMenu({ business: "Ireland", website: "Syntec Scientific" }).then((items) => {
       if (mounted && Array.isArray(items) && items.length > 0) {
         setMenuItems(items);
       }
@@ -29,13 +29,8 @@ export default function Header() {
     };
   }, []);
 
-  const standardItems = useMemo(
-    () => menuItems.filter((i) => i.menuType !== "mega"),
-    [menuItems]
-  );
-
-  const megaItems = useMemo(
-    () => menuItems.filter((i) => i.menuType === "mega"),
+  const rootItems = useMemo(
+    () => menuItems.filter((i) => i.parentId == null),
     [menuItems]
   );
 
@@ -47,17 +42,7 @@ export default function Header() {
           <span className="text-sm font-semibold text-[var(--syntec-navy)]">Syntec</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 lg:flex">
-          {standardItems.map((item) => (
-            <Link
-              key={item.id}
-              className="text-sm font-medium text-slate-700 hover:text-[var(--syntec-blue)]"
-              to={item.route || item.url || "#"}
-            >
-              {item.title}
-            </Link>
-          ))}
-        </nav>
+        <div className="hidden lg:block" />
 
         <button
           type="button"
@@ -68,7 +53,7 @@ export default function Header() {
         </button>
       </div>
 
-      <MegaMenu items={megaItems} />
+      <MegaMenu items={rootItems} />
       <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} items={menuItems} />
     </header>
   );
