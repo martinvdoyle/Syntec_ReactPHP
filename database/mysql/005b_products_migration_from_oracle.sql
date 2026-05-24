@@ -45,86 +45,146 @@ CREATE TABLE IF NOT EXISTS syntec_products_staging (
   PRIMARY KEY (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-SET @sql := IF(
-  (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'syntec_products' AND column_name = 'oracle_product_id') = 0,
-  'ALTER TABLE syntec_products ADD COLUMN oracle_product_id VARCHAR(64) NULL',
-  'SELECT 1'
-);
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @sql := IF(
-  (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'syntec_products' AND index_name = 'idx_syntec_products_oracle_product_id') = 0,
-  'ALTER TABLE syntec_products ADD INDEX idx_syntec_products_oracle_product_id (oracle_product_id)',
-  'SELECT 1'
-);
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @sql := IF(
-  (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'syntec_products' AND column_name = 'oracle_supplier_code') = 0,
-  'ALTER TABLE syntec_products ADD COLUMN oracle_supplier_code VARCHAR(64) NULL',
-  'SELECT 1'
-);
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
 INSERT INTO syntec_products (
-  oracle_product_id,
-  oracle_supplier_code,
-  product_code,
-  sku,
-  name,
-  slug,
+  product_id,
+  product_name,
+  product_name_web,
+  short_name,
+  product_sipplier_order,
   supplier_id,
-  short_description,
-  long_description,
-  category_summary,
-  primary_image_path,
-  external_url,
+  discipline,
+  product_group,
+  product_type,
+  class_id,
+  class_colour,
+  about_1,
+  about_2,
+  product_link,
+  product_enquire,
+  product_image_large,
+  product_image_small,
+  product_image_1,
+  product_image_2,
+  product_image_3,
+  product_image_4,
+  product_parent_id,
+  date_created,
+  date_deleted,
+  anchor_id,
+  product_image_large_width,
+  product_image_large_height,
+  product_image_small_width,
+  product_image_small_height,
+  supplier_name,
+  discipline_id,
+  product_group_id,
+  product_type_id,
+  product_group_type_alt,
+  product_group_type_alt_id,
+  business,
+  product_image_external,
+  prouduct_sku,
+  supplier_product_id,
+  slug,
   active_flag,
   featured_flag,
-  sort_order,
   created_at,
   updated_at
 )
 SELECT
   s.product_id,
+  TRIM(REPLACE(REPLACE(REPLACE(COALESCE(s.product_name, ''), '�', ''), '', ''''), '–', '-')),
+  s.product_name_web,
+  s.short_name,
+  s.product_sipplier_order,
   s.supplier_id,
-  s.product_id,
+  s.discipline,
+  s.product_group,
+  s.product_type,
+  s.class_id,
+  s.class_colour,
+  s.about_1,
+  s.about_2,
+  s.product_link,
+  s.product_enquire,
+  s.product_image_large,
+  s.product_image_small,
+  s.product_image_1,
+  s.product_image_2,
+  s.product_image_3,
+  s.product_image_4,
+  s.product_parent_id,
+  s.date_created,
+  s.date_deleted,
+  s.anchor_id,
+  s.product_image_large_width,
+  s.product_image_large_height,
+  s.product_image_small_width,
+  s.product_image_small_height,
+  s.supplier_name,
+  s.discipline_id,
+  s.product_group_id,
+  s.product_type_id,
+  s.product_group_type_alt,
+  s.product_group_type_alt_id,
+  s.business,
+  s.product_image_external,
   NULLIF(s.prouduct_sku, ''),
-  s.product_name,
-  COALESCE(NULLIF(s.anchor_id, ''), LOWER(REPLACE(REPLACE(REPLACE(s.product_name, ' ', '-'), '/', '-'), '&', 'and'))),
-  sup.id,
-  NULLIF(s.short_name, ''),
-  NULLIF(s.about_1, ''),
-  CONCAT_WS(' | ', NULLIF(s.discipline, ''), NULLIF(s.product_group, ''), NULLIF(s.product_type, '')),
-  COALESCE(NULLIF(s.product_image_large, ''), NULLIF(s.product_image_small, ''), NULLIF(s.product_image_1, '')),
-  NULLIF(s.product_link, ''),
+  s.supplier_product_id,
+  CASE
+    WHEN TRIM(COALESCE(s.anchor_id, '')) <> '' THEN CONCAT(TRIM(REPLACE(REPLACE(REPLACE(COALESCE(s.anchor_id, ''), '�', ''), '', ''''), '–', '-')), '-', LOWER(REPLACE(s.product_id, 'PRD-', '')))
+    ELSE CONCAT(LOWER(REPLACE(REPLACE(REPLACE(TRIM(REPLACE(REPLACE(REPLACE(COALESCE(s.product_name, ''), '�', ''), '', ''''), '–', '-')), ' ', '-'), '/', '-'), '&', 'and')), '-', LOWER(REPLACE(s.product_id, 'PRD-', '')))
+  END,
   CASE WHEN COALESCE(s.active, 'Y') = 'Y' THEN 1 ELSE 0 END,
   0,
-  COALESCE(s.product_sipplier_order, 0),
   COALESCE(s.date_created, NOW()),
   NOW()
 FROM syntec_products_staging s
-LEFT JOIN syntec_suppliers sup
-  ON sup.supplier_code = s.supplier_id
 ON DUPLICATE KEY UPDATE
-  oracle_supplier_code = VALUES(oracle_supplier_code),
-  product_code = VALUES(product_code),
-  sku = VALUES(sku),
-  name = VALUES(name),
-  slug = VALUES(slug),
+  product_name = VALUES(product_name),
+  product_name_web = VALUES(product_name_web),
+  short_name = VALUES(short_name),
+  product_sipplier_order = VALUES(product_sipplier_order),
   supplier_id = VALUES(supplier_id),
-  short_description = VALUES(short_description),
-  long_description = VALUES(long_description),
-  category_summary = VALUES(category_summary),
-  primary_image_path = VALUES(primary_image_path),
-  external_url = VALUES(external_url),
+  discipline = VALUES(discipline),
+  product_group = VALUES(product_group),
+  product_type = VALUES(product_type),
+  class_id = VALUES(class_id),
+  class_colour = VALUES(class_colour),
+  about_1 = VALUES(about_1),
+  about_2 = VALUES(about_2),
+  product_link = VALUES(product_link),
+  product_enquire = VALUES(product_enquire),
+  product_image_large = VALUES(product_image_large),
+  product_image_small = VALUES(product_image_small),
+  product_image_1 = VALUES(product_image_1),
+  product_image_2 = VALUES(product_image_2),
+  product_image_3 = VALUES(product_image_3),
+  product_image_4 = VALUES(product_image_4),
+  product_parent_id = VALUES(product_parent_id),
+  date_created = VALUES(date_created),
+  date_deleted = VALUES(date_deleted),
+  anchor_id = VALUES(anchor_id),
+  product_image_large_width = VALUES(product_image_large_width),
+  product_image_large_height = VALUES(product_image_large_height),
+  product_image_small_width = VALUES(product_image_small_width),
+  product_image_small_height = VALUES(product_image_small_height),
+  supplier_name = VALUES(supplier_name),
+  discipline_id = VALUES(discipline_id),
+  product_group_id = VALUES(product_group_id),
+  product_type_id = VALUES(product_type_id),
+  product_group_type_alt = VALUES(product_group_type_alt),
+  product_group_type_alt_id = VALUES(product_group_type_alt_id),
+  business = VALUES(business),
+  product_image_external = VALUES(product_image_external),
+  prouduct_sku = VALUES(prouduct_sku),
+  supplier_product_id = VALUES(supplier_product_id),
+  slug = VALUES(slug),
   active_flag = VALUES(active_flag),
-  sort_order = VALUES(sort_order),
   updated_at = NOW();
 
 SELECT COUNT(*) AS staged_rows FROM syntec_products_staging;
 SELECT COUNT(*) AS runtime_rows FROM syntec_products;
-SELECT COUNT(*) AS unresolved_supplier_links
+SELECT COUNT(*) AS missing_supplier_id
 FROM syntec_products
-WHERE oracle_supplier_code IS NOT NULL
-  AND supplier_id IS NULL;
+WHERE supplier_id IS NULL OR supplier_id = '';

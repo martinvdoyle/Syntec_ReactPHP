@@ -11,8 +11,8 @@ try {
     $sql = <<<'SQL'
 SELECT
     id,
-    supplier_code,
-    name,
+    COALESCE(supplier_id, supplier_code) AS supplier_id,
+    COALESCE(supplier_name, name) AS supplier_name,
     slug,
     short_description,
     website_url,
@@ -28,7 +28,7 @@ SQL;
         $sql .= ' WHERE active_flag = 1';
     }
 
-    $sql .= ' ORDER BY sort_order ASC, name ASC';
+    $sql .= ' ORDER BY sort_order ASC, supplier_name ASC';
 
     $stmt = db()->query($sql);
     $rows = $stmt->fetchAll();
@@ -36,14 +36,14 @@ SQL;
     $suppliers = array_map(static function (array $row): array {
         return [
             'id' => (int) $row['id'],
-            'supplierCode' => $row['supplier_code'] !== null ? (string) $row['supplier_code'] : null,
-            'name' => (string) $row['name'],
+            'supplierId' => $row['supplier_id'] !== null ? (string) $row['supplier_id'] : null,
+            'name' => (string) $row['supplier_name'],
             'slug' => (string) $row['slug'],
-            'shortDescription' => $row['short_description'] !== null ? (string) $row['short_description'] : null,
-            'websiteUrl' => $row['website_url'] !== null ? (string) $row['website_url'] : null,
+            'shortName' => $row['short_description'] !== null ? (string) $row['short_description'] : null,
+            'website' => $row['website_url'] !== null ? (string) $row['website_url'] : null,
             'logoPath' => $row['logo_path'] !== null ? (string) $row['logo_path'] : null,
             'bannerPath' => $row['banner_path'] !== null ? (string) $row['banner_path'] : null,
-            'businessUnit' => $row['business_unit'] !== null ? (string) $row['business_unit'] : null,
+            'business' => $row['business_unit'] !== null ? (string) $row['business_unit'] : null,
             'sortOrder' => (int) $row['sort_order'],
             'active' => (bool) $row['active_flag'],
         ];

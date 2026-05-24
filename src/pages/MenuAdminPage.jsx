@@ -112,6 +112,7 @@ export default function MenuAdminPage() {
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [isNew, setIsNew] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const load = async () => {
     const data = await fetchMenuAdmin();
@@ -168,10 +169,10 @@ export default function MenuAdminPage() {
 
   const remove = async () => {
     if (!form.id) return;
-    if (!window.confirm("Delete this menu item?")) return;
     await deleteMenuItem(form.id);
     setForm(emptyForm);
     setSelected(null);
+    setShowDeleteConfirm(false);
     await load();
   };
 
@@ -205,39 +206,49 @@ export default function MenuAdminPage() {
   );
 
   return (
-    <main className="mx-auto max-w-[1400px] p-4">
-      <h1 className="mb-1 text-2xl font-bold">Admin: Menu Maintenance</h1>
-      <p className="mb-4 text-sm text-slate-600">Hierarchy-first editor. Drag/drop works for sibling reorder, plus move up/down controls.</p>
+    <main className="mx-auto max-w-[1780px] bg-slate-50 p-4">
+      <h1 className="mb-1 text-3xl font-black tracking-tight text-slate-900">Admin: Menu Maintenance</h1>
+      <p className="mb-4 text-sm text-slate-700">Hierarchy-first editor. Drag/drop works for sibling reorder, plus move up/down controls.</p>
 
-      <div className="mb-4 flex flex-wrap gap-2 rounded border bg-white p-3">
-        <a className="rounded bg-blue-700 px-3 py-1 text-sm font-semibold text-white" href="/admin/menu">Menu</a>
-        <span className="rounded bg-slate-100 px-3 py-1 text-sm text-slate-500">Products (coming)</span>
-        <span className="rounded bg-slate-100 px-3 py-1 text-sm text-slate-500">Suppliers (coming)</span>
+      <div className="mb-4 flex flex-wrap gap-2 rounded-xl border border-[#70A9E0] bg-[#5B9BE0] p-3 shadow-sm">
+        <a className="rounded-lg border border-white bg-white px-3 py-1 text-sm font-semibold text-black shadow" href="/admin/menu">Menu</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/products">Products</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/suppliers">Suppliers</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/discipline">Discipline</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/product_group">Product Group</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/product_type">Product Type</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/divisions">Divisions</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/job_titles">Job Titles</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/message_enquiry_type">Enquiry Types</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/message_types">Message Types</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/sources">Sources</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/users">Users</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/messages">Messages</a>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.35fr]">
-        <section className="rounded border bg-white p-3">
+        <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
           <div className="mb-2 flex flex-wrap gap-2">
-            <button className="rounded bg-blue-600 px-3 py-1 text-white" onClick={newChild}>New Child</button>
-            <button className="rounded bg-indigo-600 px-3 py-1 text-white disabled:opacity-50" disabled={!selected} onClick={newSibling}>Create Sibling</button>
-            <button className="rounded bg-slate-600 px-3 py-1 text-white" onClick={() => { setIsNew(true); setSelected(null); setForm(emptyForm); }}>New Root</button>
-            <button className="rounded bg-amber-600 px-3 py-1 text-white disabled:opacity-50" disabled={!selected} onClick={() => move("up")}>Move Up</button>
-            <button className="rounded bg-amber-700 px-3 py-1 text-white disabled:opacity-50" disabled={!selected} onClick={() => move("down")}>Move Down</button>
+            <button className="rounded-lg bg-cyan-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700" onClick={newChild}>New Child</button>
+            <button className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50" disabled={!selected} onClick={newSibling}>Create Sibling</button>
+            <button className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800" onClick={() => { setIsNew(true); setSelected(null); setForm(emptyForm); }}>New Root</button>
+            <button className="rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50" disabled={!selected} onClick={() => move("up")}>Move Up</button>
+            <button className="rounded-lg bg-amber-700 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-800 disabled:opacity-50" disabled={!selected} onClick={() => move("down")}>Move Down</button>
           </div>
-          <ul className="space-y-1">
+          <ul className="max-h-[72vh] space-y-1 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-1.5 pr-1">
             {tree.map((n) => (
               <TreeNode key={n.id} node={n} selectedId={selected?.id || null} onSelect={onSelect} onDropMove={onDropMove} />
             ))}
           </ul>
         </section>
 
-        <section className="rounded border bg-white p-3">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="mb-3 text-lg font-semibold">{isNew ? "Create Item" : "Edit Item"}</h2>
 
-          <div className="mb-3 grid grid-cols-1 gap-2 rounded border bg-slate-50 p-2 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="mb-3 grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-[1fr_auto] md:items-end">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-slate-600">ICON_CLASS (editable)</span>
-              <input className="rounded border px-2 py-1" value={form.icon_class ?? ""} onChange={(e) => f("icon_class", e.target.value)} placeholder="lucide:microscope or tabler:virus" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">ICON_CLASS (editable)</span>
+              <input className="rounded-lg border border-slate-400 bg-white px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" value={form.icon_class ?? ""} onChange={(e) => f("icon_class", e.target.value)} placeholder="lucide:microscope or tabler:virus" />
             </label>
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500">Preview</span>
@@ -246,8 +257,8 @@ export default function MenuAdminPage() {
               </span>
             </div>
             <label className="md:col-span-2 flex flex-col gap-1">
-              <span className="text-xs font-semibold text-slate-600">Used Icons (helper)</span>
-              <select className="rounded border px-2 py-1" value="" onChange={(e) => e.target.value && f("icon_class", e.target.value)}>
+              <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">Used Icons (helper)</span>
+              <select className="rounded-lg border border-slate-400 bg-white px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" value="" onChange={(e) => e.target.value && f("icon_class", e.target.value)}>
                 <option value="">Choose an existing icon...</option>
                 {usedIcons.map((ic) => <option key={ic} value={ic}>{ic}</option>)}
               </select>
@@ -257,31 +268,45 @@ export default function MenuAdminPage() {
           <div className="grid grid-cols-2 gap-2 text-sm">
             {["parent_menu_id", "menu_id", "menu_name", "sub_menu_name", "sub_menu_id", "sub_menu_text", "css_class", "url", "url_mobile", "business", "business_set", "website", "website_set", "website_anchor", "menu_order", "menu_id_order", "menu_order_clone", "product_type", "discipline_id", "product_group_id", "supplier_id", "product_id", "oracle_parent_id"].map((k) => (
               <label key={k} className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase text-slate-600">{k}</span>
-                <input className="rounded border px-2 py-1" value={form[k] ?? ""} onChange={(e) => f(k, e.target.value)} />
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">{k}</span>
+                <input className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" value={form[k] ?? ""} onChange={(e) => f(k, e.target.value)} />
               </label>
             ))}
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase text-slate-600">sub_menu_level_id</span>
-              <select className="rounded border px-2 py-1" value={form.sub_menu_level_id ?? ""} onChange={(e) => f("sub_menu_level_id", e.target.value)}>
+              <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">sub_menu_level_id</span>
+              <select className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" value={form.sub_menu_level_id ?? ""} onChange={(e) => f("sub_menu_level_id", e.target.value)}>
                 <option value="">Select level</option>
                 {LEVELS.map((lvl) => <option key={lvl} value={lvl}>{lvl}</option>)}
               </select>
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase text-slate-600">enabled (Y/N)</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">enabled (Y/N)</span>
               {checkYn("enabled")}
             </label>
           </div>
 
           <div className="mt-4 flex gap-2">
-            <button className="rounded bg-emerald-600 px-3 py-1 text-white" onClick={save}>Save</button>
-            {!isNew && form.id ? <button className="rounded bg-red-600 px-3 py-1 text-white" onClick={remove}>Delete</button> : null}
+            <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700" onClick={save}>Save</button>
+            {!isNew && form.id ? <button className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700" onClick={() => setShowDeleteConfirm(true)}>Delete</button> : null}
           </div>
         </section>
       </div>
+      {showDeleteConfirm ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-900">Delete Menu Item</h3>
+            <p className="mt-2 text-sm text-slate-700">
+              Delete <span className="font-semibold">{form.menu_name || form.sub_menu_name || form.menu_id || "this item"}</span>? This cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+              <button className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700" onClick={remove}>Delete</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

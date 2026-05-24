@@ -212,3 +212,114 @@ User can provide starter package containing:
   - `fa-network-wired` -> `lucide:network`
   - `fa-head-side-virus` -> `tabler:virus`
 - Keep icon mapping consistent across desktop mega menu, non-mega dropdowns, and mobile menu.
+
+## Handoff Update (2026-05-23)
+
+### Completed In This Session
+- Admin UX parity and stability improvements:
+  - Added Products/Suppliers/Lookup list search parity (magnifier + clear `X`).
+  - Added keyboard up/down navigation + auto-scroll + focus sync on non-product list panels.
+  - Added record counts on list panels (`Showing X of Y`).
+  - Added centered styled save-success dialog across admin pages.
+- Supplier admin page alignment:
+  - Matched Products-style 3-panel layout.
+  - Added Live Preview for `profile_1`.
+  - Moved supplier logo to preview panel and resized thumbnail.
+  - Removed logo block from main detail panel.
+- Legacy content rendering fixes:
+  - Corrected legacy preview wrapper class usage (`legacy-suppliers-content`).
+  - Fixed bullet icon rendering and table bullet column width behavior in `legacy-content.css`.
+  - Fixed Products preview `circle` token rendering to filled dot.
+- Data/display fixes:
+  - Products list secondary line now shows `supplier_name` (not `product_id`).
+  - Products list search now includes `supplier_id` and `supplier_name`.
+  - Products list sort changed to `supplier_name, product_name, product_id` in API.
+  - Supplier-name strike-through in Products list now only when `supplier_active='N'` or `supplier_deleted='Y'`.
+- Icon migration scripts created/updated:
+  - `database/mysql/034_products_fa_to_new_icon_tokens.sql`
+  - `database/mysql/035_normalize_icon_columns_to_tokens.sql`
+  - `database/mysql/036_suppliers_profile_fa_to_tokens.sql`
+
+### Backend/API Changes
+- `api/products-admin.php`
+  - GET includes supplier flag fields:
+    - `supplier_active`
+    - `supplier_deleted`
+  - Sort now by supplier+product name:
+    - `ORDER BY s.supplier_name, p.product_name, p.product_id`
+  - Backend-only flag parity sync (phase 1):
+    - Product create/update syncs supplier flags and all sibling product flags by `supplier_id`.
+- `api/suppliers-admin.php`
+  - CRUD retained.
+  - Backend-only flag parity sync (phase 1):
+    - Supplier create/update syncs all child product flags by `supplier_id`.
+  - Added `impact_only=1` mode for PUT to return:
+    - `products_total`
+    - `products_changed`
+- `src/api/suppliersAdmin.js`
+  - Added `fetchSupplierImpact(payload)` helper.
+
+### Important Stability Note
+- A previous frontend preflight/impact implementation caused blank screen.
+- It was rolled back surgically in `SuppliersAdminPage.jsx` and then reintroduced in a safer shape.
+- Current app is reported working after rollback + safe backend changes.
+
+### Confirmed Data/DB State From User
+- MySQL view conversion for legacy `PRODUCTS_VIEW_ALL` validated at expected count:
+  - `685` rows.
+- Indexing check completed with required join/filter indexes added on key tables.
+
+### Open Follow-Ups For Next Agent
+1. Verify supplier impact confirm flow end-to-end in deployed environment:
+   - `SuppliersAdminPage` should show confirm with changed row totals.
+2. Consider adding non-blocking toast in addition to modal (optional UX polish).
+3. If required, move some client-side filters to server-side for large datasets.
+4. Keep strict Oracle parity (column names/types) unless explicitly approved.
+
+### Files Most Recently Touched
+- `src/pages/ProductsAdminPage.jsx`
+- `src/pages/SuppliersAdminPage.jsx`
+- `src/pages/LookupAdminPage.jsx`
+- `src/styles/legacy-content.css`
+- `src/components/admin/SaveSuccessDialog.jsx`
+- `src/api/suppliersAdmin.js`
+- `api/products-admin.php`
+- `api/suppliers-admin.php`
+- `database/mysql/034_products_fa_to_new_icon_tokens.sql`
+- `database/mysql/035_normalize_icon_columns_to_tokens.sql`
+- `database/mysql/036_suppliers_profile_fa_to_tokens.sql`
+
+## Multilingual Module Update (2026-05-23)
+
+- Added multilingual architecture/process documentation:
+  - `docs/multilingual-module.md`
+- Discipline pilot (EN/FR/IT) is implemented as additive i18n extension:
+  - Base table unchanged (`syntec_discipline`)
+  - Translation table added (`syntec_discipline_i18n`)
+- Added SQL scripts:
+  - `database/mysql/037_discipline_i18n.sql` (table + EN seed)
+  - `database/mysql/038_seed_discipline_i18n_fr_it.sql` (FR/IT seed)
+- Added discipline language handling in admin/API:
+  - `api/table-admin.php` (`lang` for discipline read/write with fallback)
+  - `src/api/tableAdmin.js` (optional `lang` in API calls)
+  - `src/pages/LookupAdminPage.jsx` (discipline language selector)
+- Current behavior:
+  - Language rows are stored per `(discipline_id, lang)`
+  - No auto-translation on edit yet (manual text entry per selected language, seeded FR/IT available)
+
+## Translation Status Update (2026-05-24)
+
+- Translation workflow clarified and stabilized to manual-first mode:
+  - EN remains in base tables.
+  - i18n tables store non-EN rows (`fr`, `it`) only.
+- Suppliers:
+  - FR/IT manual edit path confirmed working.
+  - Fixed regression where FR/IT update could clear EN `profile_1/profile_2`.
+  - FR/IT saves now update only selected language row in `syntec_suppliers_i18n`.
+- Products:
+  - Aligned write logic with suppliers.
+  - FR/IT saves do not overwrite EN base text fields (`product_name`, `short_name`, `about_1`, `about_2`).
+  - EN saves continue updating base table fields.
+- Automatic translation:
+  - Plumbing exists, but high-quality automated translation is deferred until company-owned OpenAI key is enabled.
+  - Current practical production-safe path is manual FR/IT updates in admin.

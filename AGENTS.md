@@ -970,3 +970,55 @@ This project prioritizes:
 - clean architecture
 - Codex-friendly workflow
 - future ecommerce readiness
+
+---
+
+# Current Handoff (2026-05-23)
+
+Use this section as the first-read context for any new agent session.
+
+## Current Working State
+
+- Admin pages are live and working after several stability fixes.
+- Products/Suppliers/Lookup admin pages now share consistent list UX:
+  - search with icon + clear `X`
+  - keyboard up/down list navigation
+  - list counts (`Showing X of Y`)
+  - centered save-success dialog
+- Suppliers admin now has Products-style 3-panel layout with Live Preview.
+- Supplier logo moved to preview panel and resized.
+
+## Data/Parity Status
+
+- Oracle parity effort is in advanced state for Syntec runtime tables.
+- Legacy-style `products_view_all` logic was validated in MySQL at expected row count (`685`).
+- Join/filter indexing for the view has been added/verified on key tables.
+
+## Important Rules Reconfirmed
+
+- Do not create hybrid columns.
+- Keep Oracle column names and semantics unless explicitly instructed otherwise.
+- Treat `Oracle_Exports` as canonical source for data/DDL parity work.
+
+## Recent Backend Behavior
+
+- `api/products-admin.php`:
+  - list query includes supplier flags (`supplier_active`, `supplier_deleted`)
+  - sorted by `supplier_name, product_name, product_id`
+  - backend-only flag parity sync enabled:
+    - product save propagates `active/deleted` to parent supplier and sibling products for same supplier
+- `api/suppliers-admin.php`:
+  - backend-only flag parity sync enabled:
+    - supplier save propagates `active/deleted` to all child products
+  - supports `impact_only=1` on PUT payload to return potential product impact counts
+
+## Frontend Caution
+
+- A previous supplier impact preflight flow caused a blank-screen incident and was rolled back, then reintroduced safely.
+- If blank screen recurs, prioritize surgical rollback of newest frontend logic before touching schema/data scripts.
+
+## Current Open Items
+
+1. Verify supplier impact confirm flow works cleanly in deployed environment.
+2. Keep admin UX aligned across pages while preserving existing working behavior.
+3. Avoid broad refactors while migration hardening is ongoing.

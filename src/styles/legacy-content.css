@@ -1,0 +1,207 @@
+/* Shared legacy rich-content styles (scoped) */
+
+.legacy-products-content,
+.legacy-suppliers-content {
+  color: #1e293b;
+}
+
+.legacy-products-content p,
+.legacy-suppliers-content p {
+  margin: 0 0 0.9rem;
+  line-height: 1.6;
+}
+
+.legacy-products-content .heading,
+.legacy-suppliers-content .heading {
+  margin-bottom: 0.75rem;
+}
+
+.legacy-products-content .heavy-font,
+.legacy-suppliers-content .heavy-font {
+  font-weight: 700;
+}
+
+.legacy-products-content .main-color,
+.legacy-suppliers-content .main-color {
+  color: #5ba7f6;
+}
+
+.legacy-products-content table,
+.legacy-suppliers-content table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #d9dee5;
+  background: #f8fafc;
+}
+
+.legacy-products-content td,
+.legacy-products-content th,
+.legacy-suppliers-content td,
+.legacy-suppliers-content th {
+  border: 1px solid #d9dee5;
+  padding: 0.55rem 0.6rem;
+  vertical-align: top;
+}
+
+.legacy-products-content .panel-body table tr:nth-child(even),
+.legacy-suppliers-content .panel-body table tr:nth-child(even) {
+  background: #f3f6fa;
+}
+
+.legacy-products-content .panel-body table tr:nth-child(odd),
+.legacy-suppliers-content .panel-body table tr:nth-child(odd) {
+  background: #f8fafc;
+}
+
+.legacy-products-content .panel-body td.width-40,
+.legacy-suppliers-content .panel-body td.width-40 {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.legacy-products-content .panel-body table,
+.legacy-suppliers-content .panel-body table {
+  table-layout: fixed;
+  width: 100% !important;
+}
+
+.legacy-products-content .panel-body .font-20,
+.legacy-suppliers-content .panel-body .font-20 {
+  color: #5ba7f6;
+  font-weight: 700;
+}
+
+.legacy-products-content .panel-body tr > td:first-child,
+.legacy-suppliers-content .panel-body tr > td:first-child {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+}
+
+.legacy-products-content .panel-body table td,
+.legacy-suppliers-content .panel-body table td {
+  width: auto !important;
+}
+
+.legacy-products-content .panel-body tr > td:last-child,
+.legacy-suppliers-content .panel-body tr > td:last-child {
+  width: calc(100% - 40px) !important;
+  min-width: 0 !important;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.legacy-products-content .panel-body tbody,
+.legacy-suppliers-content .panel-body tbody {
+  width: 100%;
+}
+
+.legacy-products-content .panel-body .main-color,
+.legacy-products-content .panel-body .main-color b,
+.legacy-suppliers-content .panel-body .main-color,
+.legacy-suppliers-content .panel-body .main-color b {
+  color: #5ba7f6 !important;
+}
+
+.legacy-products-content .panel-body,
+.legacy-suppliers-content .panel-body {
+  margin: 0.75rem 0;
+}
+
+.legacy-products-content .control-label,
+.legacy-suppliers-content .control-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.legacy-products-content .font-20,
+.legacy-suppliers-content .font-20 {
+  font-size: 1.15rem;
+}
+
+.legacy-products-content .font-18,
+.legacy-suppliers-content .font-18 {
+  font-size: 1.05rem;
+}
+
+.legacy-products-content .center-bullet,
+.legacy-suppliers-content .center-bullet {
+  text-align: center;
+}
+
+/* Force legacy table bullet cells to render as compact filled bullets. */
+.legacy-products-content td.center-bullet i.icon-token,
+.legacy-suppliers-content td.center-bullet i.icon-token {
+  display: inline-block;
+  font-size: 0 !important;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: currentColor;
+  color: #0e83ad;
+  vertical-align: middle;
+}
+
+/* Hard reset for legacy panel table semantics to defeat external/global overrides */
+.legacy-products-content .panel-body table,
+.legacy-products-content .panel-body tbody,
+.legacy-products-content .panel-body tr,
+.legacy-products-content .panel-body td,
+.legacy-suppliers-content .panel-body table,
+.legacy-suppliers-content .panel-body tbody,
+.legacy-suppliers-content .panel-body tr,
+.legacy-suppliers-content .panel-body td {
+  display: revert !important;
+}
+
+/* Final hard table semantics + sizing override (must stay last) */
+.legacy-products-content .panel-body table,
+.legacy-suppliers-content .panel-body table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: auto !important;
+}
+
+.legacy-products-content .panel-body tbody,
+.legacy-suppliers-content .panel-body tbody {
+  display: table-row-group !important;
+}
+
+.legacy-products-content .panel-body tr,
+.legacy-suppliers-content .panel-body tr {
+  display: table-row !important;
+}
+
+.legacy-products-content .panel-body td,
+.legacy-suppliers-content .panel-body td {
+  display: table-cell !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.legacy-products-content .panel-body tr > td:first-child,
+.legacy-suppliers-content .panel-body tr > td:first-child,
+.legacy-products-content .panel-body td.width-40,
+.legacy-suppliers-content .panel-body td.width-40 {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  padding-left: 0.35rem !important;
+  padding-right: 0.35rem !important;
+}
+
+.legacy-products-content .panel-body tr > td:last-child,
+.legacy-suppliers-content .panel-body tr > td:last-child {
+  width: auto !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
