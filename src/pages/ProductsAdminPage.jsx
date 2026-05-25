@@ -248,6 +248,7 @@ export default function ProductsAdminPage() {
         "category_summary",
         "short_name",
         "about_1",
+        "about_2",
         "active",
         "deleted",
       ]),
@@ -516,6 +517,14 @@ export default function ProductsAdminPage() {
                   }}
                   onInput={(e) => autoResize(e.currentTarget)}
                   ref={autoResize}
+                />
+              </label>
+              <label className="col-span-2 flex flex-col gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">about_2</span>
+                <textarea
+                  className="min-h-[90px] resize-y rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                  value={form.about_2 ?? ""}
+                  onChange={(e) => f("about_2", e.target.value)}
                 />
               </label>
             </div>

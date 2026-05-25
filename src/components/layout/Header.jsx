@@ -17,7 +17,7 @@ export default function Header() {
   const [menuItems, setMenuItems] = useState(menuSeed);
   const [isSticky, setIsSticky] = useState(false);
   const [languageOptions, setLanguageOptions] = useState([]);
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState(() => localStorage.getItem("syntec_lang") || "en");
 
   useEffect(() => {
     let mounted = true;
@@ -44,16 +44,27 @@ export default function Header() {
             flag: x.flag_path || "/assets/images/flags/gb.svg",
           }));
         setLanguageOptions(opts);
-        if (opts.length) setLang(opts[0].code);
+        const savedLang = localStorage.getItem("syntec_lang");
+        const nextLang = opts.some((opt) => opt.code === savedLang) ? savedLang : opts[0]?.code || "en";
+        setLang(nextLang);
+        localStorage.setItem("syntec_lang", nextLang);
       })
       .catch(() => {
         setLanguageOptions([{ code: "en", label: "English", flag: "/assets/images/flags/gb.svg" }]);
         setLang("en");
+        localStorage.setItem("syntec_lang", "en");
       });
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setIsSticky(window.scrollY > 10);
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      setIsSticky((prev) => {
+        if (!prev && y > 80) return true;
+        if (prev && y < 20) return false;
+        return prev;
+      });
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -65,7 +76,7 @@ export default function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm">
+    <header className="sticky top-0 z-[80] border-b border-slate-200 bg-white shadow-sm">
       <div className={`${isSticky ? "hidden" : "block"} bg-[#c6def4] text-[10px] uppercase tracking-wide text-[#2f4b67]`}>
         <div className="mx-auto flex max-w-[1240px] items-center justify-between px-4 py-1.5">
           <div className="hidden gap-5 md:flex">
@@ -94,12 +105,17 @@ export default function Header() {
             <MegaMenu items={rootItems} />
           </div>
         </div>
-        <div className="absolute right-0 top-1/2 flex -translate-y-1/2 justify-end items-center gap-3">
+        <div className="absolute right-0 top-1/2 z-[70] flex -translate-y-1/2 justify-end items-center gap-3">
           <div className="hidden lg:flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap">
             <select
-              className="w-[92px] rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
+              className="w-[92px] cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
               value={lang}
-              onChange={(e) => setLang(e.target.value)}
+              onChange={(e) => {
+                const nextLang = e.target.value;
+                setLang(nextLang);
+                localStorage.setItem("syntec_lang", nextLang);
+                window.dispatchEvent(new CustomEvent("syntec-language-change", { detail: nextLang }));
+              }}
             >
               {languageOptions.map((opt) => (
                 <option key={opt.code} value={opt.code}>

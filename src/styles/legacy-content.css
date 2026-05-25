@@ -2,13 +2,38 @@
 
 .legacy-products-content,
 .legacy-suppliers-content {
-  color: #1e293b;
+  color: #0f172a;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.43;
+  letter-spacing: normal;
+}
+
+.legacy-products-content *,
+.legacy-suppliers-content * {
+  font-family: inherit;
+}
+
+.legacy-products-content :where(p, li, td, th, div, span),
+.legacy-suppliers-content :where(p, li, td, th, div, span) {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .legacy-products-content p,
 .legacy-suppliers-content p {
   margin: 0 0 0.9rem;
-  line-height: 1.6;
+  line-height: inherit;
+}
+
+.legacy-products-content b,
+.legacy-products-content strong,
+.legacy-suppliers-content b,
+.legacy-suppliers-content strong {
+  color: #1e293b;
+  font-weight: 700;
 }
 
 .legacy-products-content .heading,
@@ -135,6 +160,403 @@
 .legacy-products-content .center-bullet,
 .legacy-suppliers-content .center-bullet {
   text-align: center;
+}
+
+/* Legacy ABOUT_1 / PROFILE_1 compatibility layer. These selectors are scoped so
+   old Oracle/APEX classes can render without changing stored HTML. */
+.legacy-products-content .heading h1,
+.legacy-products-content .heading h2,
+.legacy-products-content .heading h3,
+.legacy-products-content .heading h4,
+.legacy-suppliers-content .heading h1,
+.legacy-suppliers-content .heading h2,
+.legacy-suppliers-content .heading h3,
+.legacy-suppliers-content .heading h4 {
+  margin: 0 0 0.65rem;
+  color: #173a61;
+  line-height: 1.2;
+}
+
+.legacy-products-content .heading-desc,
+.legacy-suppliers-content .heading-desc {
+  color: #0f172a;
+  line-height: inherit;
+}
+
+.legacy-products-content .t-justify,
+.legacy-suppliers-content .t-justify {
+  text-align: justify;
+}
+
+.legacy-products-content :where(.t-center, .centered, .center-text),
+.legacy-suppliers-content :where(.t-center, .centered, .center-text) {
+  text-align: center;
+}
+
+.legacy-products-content .uppercase,
+.legacy-suppliers-content .uppercase {
+  text-transform: uppercase;
+}
+
+.legacy-products-content :where(.sub-heading, .side-head, .block-head, .card-title),
+.legacy-suppliers-content :where(.sub-heading, .side-head, .block-head, .card-title) {
+  color: #173a61;
+  font-weight: 800;
+}
+
+.legacy-products-content :where(.side-head, .block-head),
+.legacy-suppliers-content :where(.side-head, .block-head) {
+  margin: 1rem 0 0.5rem;
+  border-left: 4px solid #5ba7f6;
+  padding-left: 0.65rem;
+}
+
+.legacy-products-content :where(.bottom-border, .divider),
+.legacy-suppliers-content :where(.bottom-border, .divider) {
+  border-bottom: 1px solid #d9dee5;
+}
+
+.legacy-products-content :where(.font-8),
+.legacy-suppliers-content :where(.font-8) {
+  font-size: 0.5rem;
+}
+
+.legacy-products-content :where(.font-15),
+.legacy-suppliers-content :where(.font-15) {
+  font-size: 0.94rem;
+}
+
+.legacy-products-content :where(.font-17),
+.legacy-suppliers-content :where(.font-17) {
+  font-size: 1rem;
+}
+
+.legacy-products-content :where(.ullist, .mlist, .list-syn),
+.legacy-suppliers-content :where(.ullist, .mlist, .list-syn) {
+  margin: 0.5rem 0 1rem 1.25rem;
+  padding: 0;
+}
+
+.legacy-products-content :where(.ullist, .mlist, .list-syn) li,
+.legacy-suppliers-content :where(.ullist, .mlist, .list-syn) li {
+  margin: 0.35rem 0;
+}
+
+.legacy-products-content .row,
+.legacy-suppliers-content .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.legacy-products-content .col-md-6,
+.legacy-suppliers-content .col-md-6 {
+  flex: 1 1 260px;
+}
+
+.legacy-products-content .width150,
+.legacy-suppliers-content .width150 {
+  width: 150px;
+}
+
+.legacy-products-content .width-percent-80,
+.legacy-suppliers-content .width-percent-80 {
+  width: 80%;
+}
+
+.legacy-products-content :where(.margin-vertical-5),
+.legacy-suppliers-content :where(.margin-vertical-5) {
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+.legacy-products-content :where(.margin-vertical-15),
+.legacy-suppliers-content :where(.margin-vertical-15) {
+  margin-top: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.legacy-products-content :where(.margin-bottom-15),
+.legacy-suppliers-content :where(.margin-bottom-15) {
+  margin-bottom: 0.9rem;
+}
+
+.legacy-products-content :where(.margin-bottom-20),
+.legacy-suppliers-content :where(.margin-bottom-20) {
+  margin-bottom: 1.25rem;
+}
+
+.legacy-products-content :where(.margin-bottom-35),
+.legacy-suppliers-content :where(.margin-bottom-35) {
+  margin-bottom: 2rem;
+}
+
+.legacy-products-content :where(.padding-top-30),
+.legacy-suppliers-content :where(.padding-top-30) {
+  padding-top: 1.75rem;
+}
+
+.legacy-products-content :where(.padding-vertical-10),
+.legacy-suppliers-content :where(.padding-vertical-10) {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}
+
+.legacy-products-content :where(.padding-vertical-30),
+.legacy-suppliers-content :where(.padding-vertical-30) {
+  padding-top: 1.75rem;
+  padding-bottom: 1.75rem;
+}
+
+.legacy-products-content img,
+.legacy-suppliers-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.legacy-products-content :where(.image-container, .img-holder, .post-image),
+.legacy-suppliers-content :where(.image-container, .img-holder, .post-image) {
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.legacy-products-content :where(.post-item, .portfolio-item, .gallery),
+.legacy-suppliers-content :where(.post-item, .portfolio-item, .gallery) {
+  margin: 0.75rem 0;
+}
+
+.legacy-products-content .zoom,
+.legacy-suppliers-content .zoom {
+  transition: transform 0.2s ease;
+}
+
+.legacy-products-content .zoom:hover,
+.legacy-suppliers-content .zoom:hover {
+  transform: scale(1.02);
+}
+
+.legacy-products-content :where(.flip-card-front, .flip-card-back),
+.legacy-suppliers-content :where(.flip-card-front, .flip-card-back) {
+  border: 1px solid #d9dee5;
+  border-radius: 0.6rem;
+  background: #f8fafc;
+  padding: 0.85rem;
+}
+
+.legacy-products-content .syn_text-block,
+.legacy-suppliers-content .syn_text-block {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.legacy-products-content :where(.syn_visible-part, .syn_show-more-start),
+.legacy-suppliers-content :where(.syn_visible-part, .syn_show-more-start) {
+  margin-bottom: 0.75rem;
+}
+
+.legacy-products-content .syn_toggle-icon,
+.legacy-suppliers-content .syn_toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background: #e8f3ff;
+  color: #2e78bc;
+}
+
+.legacy-products-content .panel-group,
+.legacy-suppliers-content .panel-group {
+  margin: 1rem 0;
+}
+
+.legacy-products-content .panel,
+.legacy-suppliers-content .panel {
+  margin: 0 0 0.35rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.legacy-products-content .panel-heading,
+.legacy-suppliers-content .panel-heading {
+  display: block;
+  margin: 0 0 0.35rem;
+  border: 0;
+  background: #e7e7e7;
+}
+
+.legacy-products-content .panel-title,
+.legacy-suppliers-content .panel-title {
+  margin: 0;
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.legacy-products-content .panel-title > a,
+.legacy-suppliers-content .panel-title > a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.65rem;
+  padding: 0.65rem 2.25rem 0.65rem 1rem;
+  color: #111827;
+  text-decoration: none;
+}
+
+.legacy-products-content .panel-title > a::after,
+.legacy-suppliers-content .panel-title > a::after {
+  content: "⌄";
+  position: absolute;
+  right: 0.95rem;
+  top: 50%;
+  transform: translateY(-54%);
+  color: #111827;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.legacy-products-content .panel-collapse.collapse,
+.legacy-suppliers-content .panel-collapse.collapse {
+  display: none;
+}
+
+.legacy-products-content .panel-collapse.collapse.in,
+.legacy-products-content .panel-collapse.collapse.show,
+.legacy-products-content .panel-collapse.active,
+.legacy-suppliers-content .panel-collapse.collapse.in,
+.legacy-suppliers-content .panel-collapse.collapse.show,
+.legacy-suppliers-content .panel-collapse.active {
+  display: block !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.legacy-products-content .accordion .panel-body,
+.legacy-suppliers-content .accordion .panel-body {
+  margin: 0 0 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-top: 0;
+  background: #fff;
+  padding: 0.75rem;
+}
+
+.legacy-products-content :where(.antibody-outer-wrap, .antibody-drawer-box),
+.legacy-suppliers-content :where(.antibody-outer-wrap, .antibody-drawer-box) {
+  margin: 1rem 0;
+}
+
+.legacy-products-content .antibody-drawer-box,
+.legacy-suppliers-content .antibody-drawer-box {
+  border: 1px solid #d9dee5;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+  padding: 0.85rem;
+}
+
+.legacy-products-content .antibody-info-table-wrap,
+.legacy-suppliers-content .antibody-info-table-wrap {
+  overflow-x: auto;
+}
+
+.legacy-products-content .antibody-vis-label,
+.legacy-suppliers-content .antibody-vis-label {
+  display: inline-block;
+  margin-bottom: 0.3rem;
+  color: #173a61;
+  font-weight: 800;
+}
+
+.legacy-products-content :where(.antibody-link-button, .product-link-image),
+.legacy-suppliers-content :where(.antibody-link-button, .product-link-image) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.4rem;
+  background: #5ba7f6;
+  padding: 0.45rem 0.7rem;
+  color: #fff !important;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.legacy-products-content :where(.fx, .animated, .fadeInRight, .fadeInLeft, .fadeInDown, .bounceInRight, .bounceInright, .bounceInLeft),
+.legacy-suppliers-content :where(.fx, .animated, .fadeInRight, .fadeInLeft, .fadeInDown, .bounceInRight, .bounceInright, .bounceInLeft) {
+  animation: none !important;
+}
+
+.legacy-products-content :where(.fa, .fas, .fa-solid, .fa-custom),
+.legacy-suppliers-content :where(.fa, .fas, .fa-solid, .fa-custom) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05em;
+  min-width: 1.05em;
+  color: #5ba7f6;
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.legacy-products-content :where(.fa, .fas, .fa-solid, .fa-custom)::before,
+.legacy-suppliers-content :where(.fa, .fas, .fa-solid, .fa-custom)::before {
+  content: "◆";
+  font-size: 0.75em;
+}
+
+.legacy-products-content .fa-circle::before,
+.legacy-suppliers-content .fa-circle::before {
+  content: "●";
+}
+
+.legacy-products-content .fa-snowflake::before,
+.legacy-suppliers-content .fa-snowflake::before {
+  content: "✣";
+}
+
+.legacy-products-content :where(.fa-check, .fa-check-circle)::before,
+.legacy-suppliers-content :where(.fa-check, .fa-check-circle)::before {
+  content: "✓";
+}
+
+.legacy-products-content :where(.fa-chevron-up, .fa-align-justify)::before,
+.legacy-suppliers-content :where(.fa-chevron-up, .fa-align-justify)::before {
+  content: "⌄";
+}
+
+.legacy-products-content :where(.fa-star, .fa-award)::before,
+.legacy-suppliers-content :where(.fa-star, .fa-award)::before {
+  content: "★";
+}
+
+.legacy-products-content :where(.fa-layer-group, .fa-puzzle-piece)::before,
+.legacy-suppliers-content :where(.fa-layer-group, .fa-puzzle-piece)::before {
+  content: "▦";
+}
+
+.legacy-products-content :where(.fa-info-circle, .fa-bullseye, .fa-crosshairs)::before,
+.legacy-suppliers-content :where(.fa-info-circle, .fa-bullseye, .fa-crosshairs)::before {
+  content: "⊙";
+}
+
+.legacy-products-content :where(.fa-wrench, .fa-cogs, .fa-toolbox, .fa-screwdriver-wrench)::before,
+.legacy-suppliers-content :where(.fa-wrench, .fa-cogs, .fa-toolbox, .fa-screwdriver-wrench)::before {
+  content: "⚙";
+}
+
+.legacy-products-content :where(.fa-leaf, .fa-hand-holding-medical, .fa-hands, .fa-hand-holding, .fa-lightbulb, .fa-stream, .fa-stethoscope, .fa-dumbbell)::before,
+.legacy-suppliers-content :where(.fa-leaf, .fa-hand-holding-medical, .fa-hands, .fa-hand-holding, .fa-lightbulb, .fa-stream, .fa-stethoscope, .fa-dumbbell)::before {
+  content: "✦";
+}
+
+.legacy-products-content :where(.fa-video-camera, .fa-video, .fa-camera, .fa-file-alt, .fa-file-pdf-o)::before,
+.legacy-suppliers-content :where(.fa-video-camera, .fa-video, .fa-camera, .fa-file-alt, .fa-file-pdf-o)::before {
+  content: "▣";
 }
 
 /* Force legacy table bullet cells to render as compact filled bullets. */

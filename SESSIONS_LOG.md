@@ -396,3 +396,110 @@ User can provide starter package containing:
 1. Finalize sticky header row/menu/dropdown visual containment to exact Oracle behavior.
 2. Wire enquiry modal submit to final public contact/enquiry API endpoint.
 3. Replace temporary `products-admin.php` public read dependency with dedicated public `api/products.php` endpoint.
+
+## Reboot Handoff Update (2026-05-25)
+
+### Current Uncommitted Work
+- Latest changes are **not committed** yet.
+- Working tree has modified:
+  - `src/components/layout/Header.jsx`
+  - `src/pages/ProductsAdminPage.jsx`
+  - `src/pages/ProductsPage.jsx`
+  - `src/styles/legacy-content.css`
+- Existing untracked `Mysql_Exports/*` translation/export working files remain intentionally uncommitted.
+- `src/pages/ProductsPage.drawer.backup.jsx` is an untracked local backup of the earlier drawer code.
+
+### Public Products Catalogue Current State
+- Public products page now uses a fixed-height catalogue panel:
+  - title/banner stays fixed
+  - filter/products body scrolls internally
+  - product drawer is scoped to the products body, not browser edge
+- Product cards now include:
+  - admin-style search box with icon and clear `X`
+  - supplier logo
+  - blue left title bar
+  - bottom-aligned `View Product`
+  - snippet from `ABOUT_2` first, fallback to `ABOUT_1`
+- Public language dropdown is wired:
+  - `Header.jsx` stores selected language in `localStorage` as `syntec_lang`
+  - dispatches `syntec-language-change`
+  - `ProductsPage.jsx` listens and refetches `products-admin.php?lang=<selected>`
+  - product cards/drawer use selected-language rows where i18n data exists
+- Product search now includes:
+  - product id
+  - product name
+  - supplier name
+  - product group
+  - discipline
+  - `ABOUT_1`
+  - `ABOUT_2`
+
+### Product Drawer Current State
+- Drawer sticky header now shows:
+  - product name with blue left bar
+  - supplier name
+  - supplier logo
+  - close button
+- Generic `Product Details` title was removed.
+- Drawer body renders full `ABOUT_1` HTML.
+- Rich HTML typography is normalized through `src/styles/legacy-content.css` for both:
+  - `.legacy-products-content`
+  - `.legacy-suppliers-content`
+- Shared rich-content styles also affect:
+  - public products drawer
+  - products admin preview
+  - suppliers admin preview
+
+### Legacy HTML / Accordion Status
+- `ABOUT_1` / `PROFILE_1` HTML is left unchanged in the database.
+- `legacy-content.css` was expanded with a scoped compatibility layer for legacy classes found in product/supplier exports:
+  - `panel-group`, `accordion`, `panel`, `panel-heading`, `panel-title`, `panel-collapse`, `collapse`
+  - `syn_text-block`, `syn_visible-part`, `syn_show-more-start`, `syn_toggle-icon`
+  - `heading-desc`, `t-justify`, `centered`, `uppercase`, `sub-heading`, `side-head`
+  - image/card/antibody helper classes
+  - old FA classes mapped to simple symbols
+- Accordion click handling was added in `ProductsPage.jsx` via `toggleLegacyAccordion`.
+- ARCTIKO test product:
+  - `PRD-0261` / `Refrigerators & Freezers`
+  - accordion tabs have image-only content:
+    - `Fridges_Range.png`
+    - `Refrigerators_Range.png`
+    - `Combi_Range.png`
+    - `Accessories_Range.png`
+  - images exist locally under:
+    - `public/assets/images/Scientific/suppliers/arctiko/`
+- Important latest patch:
+  - `renderRichHtml()` now rewrites legacy `#WORKSPACE_FILES#assets/...` image/link paths to `/assets/...`
+  - This was patched after discovering the old check treated `#WORKSPACE_FILES#...` as a plain anchor.
+- Build after this final asset-path patch was **not run** because disk space was exhausted.
+
+### Header Sticky Issue
+- Header top-strip sticky flashing was addressed by adding hysteresis:
+  - top strip hides only after `scrollY > 80`
+  - returns only after `scrollY < 20`
+- Menu/nav should remain above catalogue/drawer by design.
+
+### Disk Space / Reboot Context
+- `C:` became full during work.
+- `C:\Websites\.tmp.driveupload` was inspected:
+  - contained compressed binary Git/object-like temp upload chunks
+  - web search indicates `.tmp.driveupload` is commonly Google Drive / OneDrive temporary upload cache
+  - user deleted it; folder is now gone
+- Free space did not recover because Windows system files were large:
+  - `C:\pagefile.sys` about `31.8 GB`
+  - `C:\hiberfil.sys` about `6.8 GB`
+- Reboot was recommended to let Windows shrink/release pagefile usage.
+
+### First Steps After Reboot
+1. Check free space:
+   - `Get-PSDrive C`
+2. Run build:
+   - `npm run build`
+3. Test public products page:
+   - language dropdown opens/changes language
+   - search includes `ABOUT_1` / `ABOUT_2`
+   - ARCTIKO accordion expands and displays images
+   - header sticky no longer flashes
+4. If build passes and UI checks out, update git:
+   - commit modified source files
+   - leave `Mysql_Exports/*` WIP files untracked unless explicitly requested
