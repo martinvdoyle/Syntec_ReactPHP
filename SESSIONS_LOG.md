@@ -323,3 +323,76 @@ User can provide starter package containing:
 - Automatic translation:
   - Plumbing exists, but high-quality automated translation is deferred until company-owned OpenAI key is enabled.
   - Current practical production-safe path is manual FR/IT updates in admin.
+
+## Handoff Update (2026-05-25)
+
+### Public Site Work Completed
+- Header/footer and homepage shell alignment work progressed for Oracle Page 0/Page 1 parity.
+- Added new public products middle-content implementation (non-admin) in `src/pages/ProductsPage.jsx`.
+
+### Products Public Page (Middle Content Panel)
+- Replaced placeholder with styled Syntec Scientific catalogue page.
+- Wired to live data (temporary source):
+  - Fetches from `api/products-admin.php?lang=en`
+  - Filters to `business = 'Syntec Scientific'`
+- Primary filters implemented:
+  - Discipline
+  - Product Group (dependent list)
+  - Search
+- Card UX updates:
+  - full product image display area (`object-contain`)
+  - snippet logic from product text
+  - supplier logo support (from supplier logo columns)
+  - bottom-aligned `View Product` CTA
+- Added product drawer:
+  - opens on `View Product`
+  - full product view with image, discipline/group, supplier and logo
+  - full `ABOUT_1` HTML rendering
+  - icon-token rendering parity with admin preview (`lucide:`/`tabler:` replacement)
+  - slide-in animation
+- Added enquiry modal flow from drawer:
+  - `Enquire About This Product` button
+  - local capture form (name/company/email/message) ready for final API wire-up
+
+### API / Backend Changes
+- `api/products-admin.php`
+  - GET now includes:
+    - `supplier_logo_small`
+    - `supplier_logo_large`
+  - Enables public card/drawer supplier logos.
+
+### Languages Module / Wiring
+- Added language master module:
+  - `database/mysql/047_languages_admin.sql`
+  - `api/languages-admin.php`
+  - `src/api/languagesAdmin.js`
+  - `src/pages/LanguagesAdminPage.jsx`
+- Existing admin language dropdowns moved from hardcoded list to `syntec_languages` data source:
+  - Products / Suppliers / Lookup pages.
+- Added language impact-confirm behavior for add/delete in languages admin.
+
+### Header/Nav Notes
+- Multiple iterative header sticky alignment tweaks were made.
+- Constraint requested by user: do not modify working nav logic; only shell behavior/layout.
+- Current state includes sticky/header shell work-in-progress and may need one final alignment pass for menu/dropdown containment.
+
+### Key Files Touched This Session
+- `src/pages/ProductsPage.jsx`
+- `api/products-admin.php`
+- `src/components/layout/Header.jsx`
+- `src/components/layout/Footer.jsx`
+- `src/components/layout/Layout.jsx`
+- `src/pages/HomePage.jsx`
+- `src/pages/LanguagesAdminPage.jsx`
+- `src/api/languagesAdmin.js`
+- `api/languages-admin.php`
+- `database/mysql/043_lookup_i18n_seed_fr_it.sql`
+- `database/mysql/044_lookup_i18n_translate_fr_it.sql`
+- `database/mysql/045_suppliers_i18n_updates_fr.sql`
+- `database/mysql/046_suppliers_i18n_updates_it.sql`
+- `database/mysql/047_languages_admin.sql`
+
+### Pending Follow-Ups
+1. Finalize sticky header row/menu/dropdown visual containment to exact Oracle behavior.
+2. Wire enquiry modal submit to final public contact/enquiry API endpoint.
+3. Replace temporary `products-admin.php` public read dependency with dedicated public `api/products.php` endpoint.

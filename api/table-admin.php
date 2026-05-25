@@ -31,6 +31,11 @@ function sanitizeAnchorId($value): ?string {
     $s = trim($s, '-');
     return $s === '' ? null : $s;
 }
+function tableExists(PDO $pdo, string $tableName): bool {
+    $stmt = $pdo->prepare("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :t LIMIT 1");
+    $stmt->execute(['t' => $tableName]);
+    return (bool)$stmt->fetchColumn();
+}
 
 $allowedTables = [
     'syntec_discipline',
@@ -56,6 +61,16 @@ $primaryKeyMap = [
     'syntec_users' => 'user_id',
     'syntec_messages' => 'message_id',
 ];
+$i18nConfig = [
+    'syntec_discipline' => ['table' => 'syntec_discipline_i18n', 'pk' => 'discipline_id', 'field' => 'discipline_name'],
+    'syntec_product_group' => ['table' => 'syntec_product_group_i18n', 'pk' => 'product_group_id', 'field' => 'product_group_name'],
+    'syntec_product_type' => ['table' => 'syntec_product_type_i18n', 'pk' => 'product_type_id', 'field' => 'product_type_name'],
+    'syntec_divisions' => ['table' => 'syntec_divisions_i18n', 'pk' => 'division_id', 'field' => 'division_description'],
+    'syntec_job_titles' => ['table' => 'syntec_job_titles_i18n', 'pk' => 'job_title_id', 'field' => 'job_title_description'],
+    'syntec_message_enquiry_type' => ['table' => 'syntec_message_enquiry_type_i18n', 'pk' => 'enquiry_type_id', 'field' => 'enquiry_type_description'],
+    'syntec_message_types' => ['table' => 'syntec_message_types_i18n', 'pk' => 'message_type_id', 'field' => 'message_description'],
+    'syntec_sources' => ['table' => 'syntec_sources_i18n', 'pk' => 'source_type_id', 'field' => 'source_description'],
+];
 
 try {
     $pdo = db();
@@ -78,16 +93,17 @@ try {
     if (!$columns) badRequest('Table columns not found.');
 
     if ($method === 'GET') {
-        if ($table === 'syntec_discipline') {
+        if (isset($i18nConfig[$table]) && tableExists($pdo, $i18nConfig[$table]['table'])) {
+            $cfg = $i18nConfig[$table];
+            $i18nTable = $cfg['table'];
+            $i18nPk = $cfg['pk'];
+            $i18nField = $cfg['field'];
             $sql = "SELECT d.*,
-                           COALESCE(di_req.discipline_name, di_en.discipline_name, d.discipline_name) AS discipline_name
-                    FROM syntec_discipline d
-                    LEFT JOIN syntec_discipline_i18n di_req
-                      ON di_req.discipline_id = d.discipline_id
+                           COALESCE(di_req.{$i18nField}, d.{$i18nField}) AS {$i18nField}
+                    FROM {$table} d
+                    LEFT JOIN {$i18nTable} di_req
+                      ON di_req.{$i18nPk} = d.{$i18nPk}
                      AND di_req.lang = :lang
-                    LEFT JOIN syntec_discipline_i18n di_en
-                      ON di_en.discipline_id = d.discipline_id
-                     AND di_en.lang = 'en'
                     ORDER BY d.{$pk} DESC";
             $stmt = $pdo->prepare($sql);
             $stmt->execute(['lang' => $lang]);
@@ -104,14 +120,12 @@ try {
         if (array_key_exists('anchor_id', $in)) {
             $in['anchor_id'] = sanitizeAnchorId($in['anchor_id']);
         }
-        if ($table === 'syntec_discipline') {
-            // Keep base Oracle-parity name in sync for English only.
-            $baseName = $in['discipline_name_base'] ?? (($lang === 'en') ? ($in['discipline_name'] ?? null) : null);
-            if ($baseName !== null) {
-                $in['discipline_name'] = $baseName;
-            } else {
-                unset($in['discipline_name']);
-            }
+        if (isset($i18nConfig[$table])) {
+            $cfg = $i18nConfig[$table];
+            $field = $cfg['field'];
+            $baseName = $in[$field . '_base'] ?? (($lang === 'en') ? ($in[$field] ?? null) : null);
+            if ($baseName !== null) $in[$field] = $baseName;
+            else unset($in[$field]);
         }
         $insCols = array_values(array_filter($columns, static fn(string $c): bool => array_key_exists($c, $in)));
         if (!$insCols) badRequest('No insertable fields provided.');
@@ -124,17 +138,26 @@ try {
             $params[$c] = $in[$c];
         }
         $stmt->execute($params);
-        if ($table === 'syntec_discipline') {
-            $disciplineId = (string)($in['discipline_id'] ?? '');
-            if ($disciplineId !== '' && array_key_exists('discipline_name', $in)) {
-                $up = $pdo->prepare("INSERT INTO syntec_discipline_i18n (discipline_id, lang, discipline_name)
-                                     VALUES (:discipline_id, :lang, :discipline_name)
-                                     ON DUPLICATE KEY UPDATE discipline_name = VALUES(discipline_name)");
-                $up->execute([
-                    'discipline_id' => $disciplineId,
-                    'lang' => $lang,
-                    'discipline_name' => $in['discipline_name'],
-                ]);
+        if (isset($i18nConfig[$table]) && tableExists($pdo, $i18nConfig[$table]['table'])) {
+            $cfg = $i18nConfig[$table];
+            $rowId = (string)($in[$cfg['pk']] ?? '');
+            $field = $cfg['field'];
+            if ($rowId !== '' && array_key_exists($field, $in)) {
+                $seedVal = (string)($in[$field] ?? '');
+                $up = $pdo->prepare("INSERT INTO {$cfg['table']} ({$cfg['pk']}, lang, {$field})
+                                     VALUES (:row_id, :lang, :field_val)
+                                     ON DUPLICATE KEY UPDATE {$field} = VALUES({$field})");
+                foreach (['fr', 'it'] as $seedLang) {
+                    $fieldVal = $seedVal;
+                    if ($lang !== 'en' && $lang === $seedLang) {
+                        $fieldVal = (string)($in[$field] ?? '');
+                    }
+                    $up->execute([
+                        'row_id' => $rowId,
+                        'lang' => $seedLang,
+                        'field_val' => $fieldVal,
+                    ]);
+                }
             }
         }
         echo json_encode(['ok' => true, 'key' => $in[$pk] ?? null]);
@@ -148,13 +171,12 @@ try {
         }
         $key = (string)($in[$pk] ?? '');
         if ($key === '') badRequest("{$pk} is required.");
-        if ($table === 'syntec_discipline') {
-            $baseName = $in['discipline_name_base'] ?? (($lang === 'en') ? ($in['discipline_name'] ?? null) : null);
-            if ($baseName !== null) {
-                $in['discipline_name'] = $baseName;
-            } else {
-                unset($in['discipline_name']);
-            }
+        if (isset($i18nConfig[$table])) {
+            $cfg = $i18nConfig[$table];
+            $field = $cfg['field'];
+            $baseName = $in[$field . '_base'] ?? (($lang === 'en') ? ($in[$field] ?? null) : null);
+            if ($baseName !== null) $in[$field] = $baseName;
+            else unset($in[$field]);
         }
 
         $updCols = array_values(array_filter($columns, static fn(string $c): bool => $c !== $pk && array_key_exists($c, $in)));
@@ -167,16 +189,21 @@ try {
             }
             $stmt->execute($params);
         }
-        if ($table === 'syntec_discipline' && array_key_exists('discipline_name', $in)) {
-            $up = $pdo->prepare("INSERT INTO syntec_discipline_i18n (discipline_id, lang, discipline_name)
-                                 VALUES (:discipline_id, :lang, :discipline_name)
-                                 ON DUPLICATE KEY UPDATE discipline_name = VALUES(discipline_name)");
-            $up->execute([
-                'discipline_id' => $key,
-                'lang' => $lang,
-                'discipline_name' => $in['discipline_name'],
-            ]);
-        } elseif (!$updCols) {
+        if (isset($i18nConfig[$table]) && tableExists($pdo, $i18nConfig[$table]['table'])) {
+            $cfg = $i18nConfig[$table];
+            $field = $cfg['field'];
+            if (array_key_exists($field, $in) && $lang !== 'en') {
+                $up = $pdo->prepare("INSERT INTO {$cfg['table']} ({$cfg['pk']}, lang, {$field})
+                                     VALUES (:row_id, :lang, :field_val)
+                                     ON DUPLICATE KEY UPDATE {$field} = VALUES({$field})");
+                $up->execute([
+                    'row_id' => $key,
+                    'lang' => $lang,
+                    'field_val' => $in[$field],
+                ]);
+            }
+        }
+        if (!$updCols && !(isset($i18nConfig[$table]) && isset($field) && array_key_exists($field, $in) && $lang !== 'en')) {
             badRequest('No updatable fields provided.');
         }
         echo json_encode(['ok' => true]);

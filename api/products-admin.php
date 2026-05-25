@@ -48,7 +48,9 @@ try {
                                     COALESCE(NULLIF(p.product_image_1,''), NULLIF(p.product_image_large,'')) AS product_image_display,
                                     s.active AS supplier_active,
                                     s.deleted AS supplier_deleted,
-                                    s.supplier_name AS supplier_name_join
+                                    s.supplier_name AS supplier_name_join,
+                                    s.supplier_logo_small,
+                                    s.supplier_logo_large
                              FROM syntec_products p
                              LEFT JOIN syntec_product_i18n pi
                                ON pi.product_id = p.product_id

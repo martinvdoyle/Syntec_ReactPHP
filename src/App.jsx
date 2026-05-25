@@ -9,6 +9,7 @@ import ProductsAdminPage from "./pages/ProductsAdminPage";
 import ProductsPage from "./pages/ProductsPage";
 import SuppliersAdminPage from "./pages/SuppliersAdminPage";
 import SuppliersPage from "./pages/SuppliersPage";
+import LanguagesAdminPage from "./pages/LanguagesAdminPage";
 
 function NotFoundPage() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/admin/sources" element={<LookupAdminPage tableKey="sources" />} />
         <Route path="/admin/users" element={<LookupAdminPage tableKey="users" />} />
         <Route path="/admin/messages" element={<LookupAdminPage tableKey="messages" />} />
+        <Route path="/admin/languages" element={<LanguagesAdminPage />} />
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/suppliers" element={<SuppliersPage />} />

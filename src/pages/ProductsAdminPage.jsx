@@ -4,15 +4,10 @@ import * as LucideIcons from "lucide-react";
 import * as TablerIcons from "@tabler/icons-react";
 import { createProduct, deleteProduct, fetchProductsAdmin, updateProduct } from "../api/productsAdmin";
 import { fetchSuppliersAdmin } from "../api/suppliersAdmin";
+import { fetchLanguages } from "../api/languagesAdmin";
 import { API_BASE_URL } from "../api/config";
 import SaveSuccessDialog from "../components/admin/SaveSuccessDialog";
 import "../styles/legacy-content.css";
-
-const LANGUAGE_OPTIONS = [
-  { code: "en", label: "English (en)", flag: "/assets/images/flags/gb.svg" },
-  { code: "fr", label: "French (fr)", flag: "/assets/images/flags/fr.svg" },
-  { code: "it", label: "Italian (it)", flag: "/assets/images/flags/it.svg" },
-];
 
 const empty = {
   id: null,
@@ -30,6 +25,7 @@ const empty = {
 
 export default function ProductsAdminPage() {
   const [lang, setLang] = useState("en");
+  const [languageOptions, setLanguageOptions] = useState([]);
   const [items, setItems] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -49,13 +45,32 @@ export default function ProductsAdminPage() {
     try {
       setError("");
       const data = await fetchProductsAdmin(lang);
-      setItems(data.items || []);
+      const list = data.items || [];
+      setItems(list);
+      if (!list.length) {
+        setSelectedId(null);
+        return;
+      }
+      setSelectedId((prev) => {
+        if (prev && list.some((x) => rowKey(x) === prev)) return prev;
+        return rowKey(list[0]);
+      });
     } catch (e) {
       setError(e?.message || "Failed to load products.");
     }
   };
 
   useEffect(() => { load(); }, [lang]);
+  useEffect(() => {
+    fetchLanguages()
+      .then((r) => {
+        const opts = (r?.items || []).filter((x) => String(x.is_active || "Y").toUpperCase() === "Y")
+          .map((x) => ({ code: String(x.lang_code), label: `${x.lang_name} (${x.lang_code})`, flag: x.flag_path || "/assets/images/flags/gb.svg" }));
+        setLanguageOptions(opts);
+        if (opts.length && !opts.some((o) => o.code === lang)) setLang(opts[0].code);
+      })
+      .catch(() => setLanguageOptions([{ code: "en", label: "English (en)", flag: "/assets/images/flags/gb.svg" }]));
+  }, []);
   useEffect(() => {
     fetchSuppliersAdmin()
       .then((payload) => setSuppliers(Array.isArray(payload?.items) ? payload.items : []))
@@ -284,7 +299,7 @@ export default function ProductsAdminPage() {
         <span className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">Language</span>
         <span className="inline-flex min-w-10 items-center justify-center rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-bold text-slate-700">
           <img
-            src={LANGUAGE_OPTIONS.find((x) => x.code === lang)?.flag}
+            src={languageOptions.find((x) => x.code === lang)?.flag}
             alt={lang}
             className="h-4 w-6 rounded-sm border border-slate-300 object-cover"
           />
@@ -294,7 +309,7 @@ export default function ProductsAdminPage() {
           value={lang}
           onChange={(e) => setLang(e.target.value)}
         >
-          {LANGUAGE_OPTIONS.map((opt) => (
+          {languageOptions.map((opt) => (
             <option key={opt.code} value={opt.code}>
               {opt.label}
             </option>
@@ -317,6 +332,7 @@ export default function ProductsAdminPage() {
         <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/sources">Sources</a>
         <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/users">Users</a>
         <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/messages">Messages</a>
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/languages">Languages</a>
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_1.55fr_1.1fr]">
@@ -536,7 +552,7 @@ export default function ProductsAdminPage() {
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Live Preview</h3>
               <img
-                src={LANGUAGE_OPTIONS.find((x) => x.code === lang)?.flag}
+                src={languageOptions.find((x) => x.code === lang)?.flag}
                 alt={lang}
                 className="h-4 w-6 rounded-sm border border-slate-300 object-cover"
               />

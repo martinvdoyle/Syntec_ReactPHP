@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as LucideIcons from "lucide-react";
 import { createTableRow, deleteTableRow, fetchTableAdmin, updateTableRow } from "../api/tableAdmin";
+import { fetchLanguages } from "../api/languagesAdmin";
 import SaveSuccessDialog from "../components/admin/SaveSuccessDialog";
 
 const TABLE_CONFIG = {
@@ -53,20 +54,27 @@ const LINKS = [
   ["users", "Users"],
   ["messages", "Messages"],
 ];
-const LANGUAGE_OPTIONS = [
-  { code: "en", label: "English (en)", flag: "/assets/images/flags/gb.svg" },
-  { code: "fr", label: "French (fr)", flag: "/assets/images/flags/fr.svg" },
-  { code: "it", label: "Italian (it)", flag: "/assets/images/flags/it.svg" },
-];
+const TRANSLATABLE_TABLES = new Set([
+  "discipline",
+  "product_group",
+  "product_type",
+  "divisions",
+  "job_titles",
+  "message_enquiry_type",
+  "message_types",
+  "sources",
+]);
 
 export default function LookupAdminPage({ tableKey }) {
   const cfg = TABLE_CONFIG[tableKey];
-  const isDiscipline = tableKey === "discipline";
+  const isTranslatable = TRANSLATABLE_TABLES.has(tableKey);
   const [lang, setLang] = useState("en");
+  const [languageOptions, setLanguageOptions] = useState([]);
   const [items, setItems] = useState([]);
   const [columns, setColumns] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [query, setQuery] = useState("");
+  const [disciplineFilter, setDisciplineFilter] = useState("");
   const [filterActiveY, setFilterActiveY] = useState(true);
   const [filterDeletedN, setFilterDeletedN] = useState(false);
   const [form, setForm] = useState({});
@@ -75,8 +83,27 @@ export default function LookupAdminPage({ tableKey }) {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const listRef = useRef(null);
 
-  const getRowKey = (row) =>
-    row?.id ?? row?.discipline_id ?? row?.product_group_id ?? row?.product_type_id ?? row?.division_id ?? row?.job_title_id ?? row?.enquiry_type_id ?? row?.message_type ?? row?.source_type ?? row?.user_id ?? row?.message_id;
+  const getRowKey = (row, idx = -1) => {
+    if (tableKey === "product_group") {
+      const pg = String(row?.product_group_id ?? "").trim();
+      const did = String(row?.discipline_id ?? "").trim();
+      if (pg || did) return `${pg}::${did}`;
+    }
+    const k =
+      row?.id ??
+      row?.discipline_id ??
+      row?.product_group_id ??
+      row?.product_type_id ??
+      row?.division_id ??
+      row?.job_title_id ??
+      row?.enquiry_type_id ??
+      row?.message_type_id ??
+      row?.source_type_id ??
+      row?.user_id ??
+      row?.message_id;
+    if (k != null && String(k).trim() !== "") return String(k);
+    return `${tableKey || "row"}::${idx}`;
+  };
   const load = async () => {
     if (!cfg) {
       setError(`Invalid table route key: ${String(tableKey)}`);
@@ -84,15 +111,32 @@ export default function LookupAdminPage({ tableKey }) {
     }
     try {
       setError("");
-      const data = await fetchTableAdmin(cfg.table, isDiscipline ? lang : undefined);
+      const data = await fetchTableAdmin(cfg.table, isTranslatable ? lang : undefined);
       const rows = data.items || [];
       setItems(rows);
       setColumns(data.columns || []);
-      if (rows.length && !selectedId) setSelectedId(getRowKey(rows[0]));
+      if (!rows.length) {
+        setSelectedId(null);
+        return;
+      }
+      setSelectedId((prev) => {
+        if (prev && rows.some((x, idx) => getRowKey(x, idx) === prev)) return prev;
+        return getRowKey(rows[0], 0);
+      });
     } catch (e) {
       setError(e?.message || "Failed to load table data.");
     }
   };
+  useEffect(() => {
+    fetchLanguages()
+      .then((r) => {
+        const opts = (r?.items || []).filter((x) => String(x.is_active || "Y").toUpperCase() === "Y")
+          .map((x) => ({ code: String(x.lang_code), label: `${x.lang_name} (${x.lang_code})`, flag: x.flag_path || "/assets/images/flags/gb.svg" }));
+        setLanguageOptions(opts);
+        if (opts.length && !opts.some((o) => o.code === lang)) setLang(opts[0].code);
+      })
+      .catch(() => setLanguageOptions([{ code: "en", label: "English (en)", flag: "/assets/images/flags/gb.svg" }]));
+  }, []);
 
   useEffect(() => { load(); }, [cfg?.table, tableKey, lang]);
   const selected = useMemo(() => items.find((x) => getRowKey(x) === selectedId) || null, [items, selectedId]);
@@ -146,6 +190,18 @@ export default function LookupAdminPage({ tableKey }) {
   }, [columns, tableKey]);
   const hasActiveColumn = useMemo(() => visibleColumns.some((c) => String(c).toLowerCase() === "active"), [visibleColumns]);
   const hasDeletedColumn = useMemo(() => visibleColumns.some((c) => String(c).toLowerCase() === "deleted"), [visibleColumns]);
+  const isProductGroup = tableKey === "product_group";
+  const disciplineOptions = useMemo(() => {
+    if (!isProductGroup) return [];
+    const seen = new Map();
+    items.forEach((row) => {
+      const id = String(row?.discipline_id ?? "").trim();
+      const name = String(row?.discipline_name ?? "").trim();
+      if (!id) return;
+      if (!seen.has(id)) seen.set(id, name || id);
+    });
+    return Array.from(seen.entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+  }, [items, isProductGroup]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -157,9 +213,12 @@ export default function LookupAdminPage({ tableKey }) {
     if (hasDeletedColumn && filterDeletedN) {
       list = list.filter((row) => yn(row.deleted) === "Y");
     }
+    if (isProductGroup && disciplineFilter) {
+      list = list.filter((row) => String(row?.discipline_id ?? "").trim() === disciplineFilter);
+    }
     if (!q) return list;
     return list.filter((row) => visibleColumns.some((c) => String(row[c] ?? "").toLowerCase().includes(q)));
-  }, [items, query, visibleColumns, hasActiveColumn, hasDeletedColumn, filterActiveY, filterDeletedN]);
+  }, [items, query, visibleColumns, hasActiveColumn, hasDeletedColumn, filterActiveY, filterDeletedN, isProductGroup, disciplineFilter]);
 
   useEffect(() => {
     if (!selectedId || !listRef.current) return;
@@ -184,8 +243,8 @@ export default function LookupAdminPage({ tableKey }) {
   };
 
   const save = async () => {
-    if (isNew) await createTableRow(cfg.table, form, isDiscipline ? lang : undefined);
-    else await updateTableRow(cfg.table, form, isDiscipline ? lang : undefined);
+    if (isNew) await createTableRow(cfg.table, form, isTranslatable ? lang : undefined);
+    else await updateTableRow(cfg.table, form, isTranslatable ? lang : undefined);
     await load();
     setShowSaveDialog(true);
   };
@@ -194,7 +253,7 @@ export default function LookupAdminPage({ tableKey }) {
     const keyName = keyByTable[tableKey];
     const keyValue = form[keyName];
     if (!keyName || keyValue == null || keyValue === "") return;
-    await deleteTableRow(cfg.table, keyName, keyValue, isDiscipline ? lang : undefined);
+    await deleteTableRow(cfg.table, keyName, keyValue, isTranslatable ? lang : undefined);
     setForm({});
     setSelectedId(null);
     await load();
@@ -204,12 +263,12 @@ export default function LookupAdminPage({ tableKey }) {
     <main className="mx-auto max-w-[1780px] bg-slate-50 p-4">
       <h1 className="mb-1 text-3xl font-black tracking-tight text-slate-900">Admin: {cfg?.label || "Unknown"}</h1>
       <p className="mb-4 text-sm text-slate-700">Three-panel workspace with live content preview.</p>
-      {isDiscipline ? (
+      {isTranslatable ? (
         <div className="mb-3 flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">Language</span>
           <span className="inline-flex min-w-10 items-center justify-center rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-bold text-slate-700">
             <img
-              src={LANGUAGE_OPTIONS.find((x) => x.code === lang)?.flag}
+              src={languageOptions.find((x) => x.code === lang)?.flag}
               alt={lang}
               className="h-4 w-6 rounded-sm border border-slate-300 object-cover"
             />
@@ -219,7 +278,7 @@ export default function LookupAdminPage({ tableKey }) {
             value={lang}
             onChange={(e) => setLang(e.target.value)}
           >
-            {LANGUAGE_OPTIONS.map((opt) => (
+            {languageOptions.map((opt) => (
               <option key={opt.code} value={opt.code}>
                 {opt.label}
               </option>
@@ -236,6 +295,7 @@ export default function LookupAdminPage({ tableKey }) {
         {LINKS.map(([key, label]) => (
           <a key={key} className={`rounded-lg border px-3 py-1 text-sm font-medium transition ${tableKey===key ? 'border-white bg-white font-semibold text-black shadow' : 'border-white/45 bg-[#4E8FD8] !text-white visited:!text-white hover:bg-[#3F82CE]'}`} href={`/admin/${key}`}>{label}</a>
         ))}
+        <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/languages">Languages</a>
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_1.55fr]">
@@ -262,6 +322,23 @@ export default function LookupAdminPage({ tableKey }) {
               ) : null}
             </div>
           </div>
+          {isProductGroup ? (
+            <div className="mb-2 px-1">
+              <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">
+                <span>Discipline</span>
+                <select
+                  className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm font-medium normal-case tracking-normal text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                  value={disciplineFilter}
+                  onChange={(e) => setDisciplineFilter(e.target.value)}
+                >
+                  <option value="">All disciplines</option>
+                  {disciplineOptions.map(([id, name]) => (
+                    <option key={id} value={id}>{name}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null}
           {(hasActiveColumn || hasDeletedColumn) ? (
             <div className="mb-2 flex items-center gap-4 px-1 text-xs font-semibold text-slate-700">
               {hasActiveColumn ? (
@@ -287,14 +364,16 @@ export default function LookupAdminPage({ tableKey }) {
             tabIndex={0}
             onKeyDown={handleListKeyDown}
           >
-            {filtered.map((r) => (
-              <li key={getRowKey(r)}>
+            {filtered.map((r, idx) => {
+              const rowId = getRowKey(r, idx);
+              return (
+              <li key={rowId}>
                 <button
-                  data-row-id={getRowKey(r)}
+                  data-row-id={rowId}
                   type="button"
-                  onClick={() => setSelectedId(getRowKey(r))}
+                  onClick={() => setSelectedId(rowId)}
                   className={`w-full rounded-lg border-l-4 px-2 py-1.5 text-left text-sm transition ${
-                    getRowKey(selected) === getRowKey(r)
+                    getRowKey(selected) === rowId
                       ? "border-l-cyan-700 border-r-cyan-300 border-y-cyan-300 bg-cyan-100 text-cyan-950"
                       : "border-l-transparent border-r-transparent border-y-transparent hover:border-r-slate-200 hover:border-y-slate-200 hover:bg-slate-50"
                   } focus:outline-none`}
@@ -302,11 +381,18 @@ export default function LookupAdminPage({ tableKey }) {
                   <p className="truncate text-[15px] font-semibold">
                     {(tableKey === "users"
                       ? `${String(r.first_name || "").trim()} ${String(r.last_name || "").trim()}`.trim() || r.username
-                      : r.discipline_name || r.product_group_name || r.product_type_name || r.division_description || r.job_title_description || r.enquiry_type_description || r.message_description || r.source_description || r.message_ref) || "(no name)"}
+                      : tableKey === "product_group"
+                        ? (r.product_group_name || "(no product group)")
+                        : r.discipline_name || r.product_group_name || r.product_type_name || r.division_description || r.job_title_description || r.enquiry_type_description || r.message_description || r.source_description || r.message_ref) || "(no name)"}
                   </p>
+                  {tableKey === "product_group" ? (
+                    <p className="mt-0.5 truncate text-xs font-medium text-slate-600">
+                      {String(r.discipline_name || "(no discipline)")}
+                    </p>
+                  ) : null}
                 </button>
               </li>
-            ))}
+            )})}
           </ul>
         </section>
 
