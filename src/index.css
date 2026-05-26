@@ -35,3 +35,117 @@ a {
 .fa-custom::before {
   content: var(--fa);
 }
+
+/* Scoped port of legacy header-9 L0 nav mechanics */
+.syn-legacy-l0 {
+  align-items: stretch;
+}
+
+.syn-legacy-l0 > .syn-legacy-l0-pill {
+  position: relative;
+  border-radius: 42px;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.syn-legacy-l0 > .syn-legacy-l0-pill::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: -1px;
+  width: 20px;
+  height: calc(100% + 2px);
+  border-radius: 999px 0 0 999px;
+  border-left: 1px solid #c9d4e4;
+  border-top: 1px solid #c9d4e4;
+  border-bottom: 1px solid #c9d4e4;
+  background: #fff;
+  z-index: -1;
+}
+
+.syn-legacy-l0 > .syn-legacy-l0-pill-active::before {
+  border-color: #5a9be0;
+  background: var(--syntec-blue);
+}
+
+/* Concept B live nav rail */
+.mega-concept-b .mega-concept-b-rail {
+  border-radius: 44px;
+}
+
+.mega-concept-b .mega-concept-b-blob {
+  border-radius: 36px;
+  box-shadow: 0 10px 20px rgba(36, 96, 167, 0.24);
+}
+
+.mega-concept-b .mega-concept-b-pill::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 36px;
+  border-radius: 0 39px 39px 0;
+  background: transparent;
+  border: 1px solid #d6dfec;
+  border-left: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* Scoped nav shell from working fixed POC */
+.syn-bnav .syn-bnav-row {
+  height: 74px;
+}
+
+.syn-bnav .syn-bnav-logo {
+  height: 74px;
+  border: 0;
+  border-radius: 40px 0 0 40px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 10px;
+  margin: 0;
+}
+
+.syn-bnav .syn-bnav-lang {
+  height: 74px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  margin: 0;
+}
+
+.syn-bnav .mega-concept-b {
+  height: 74px;
+}
+
+.syn-bnav .mega-concept-b .mega-concept-b-rail {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  padding: 0 6px;
+  overflow: visible;
+}
+
+.syn-bnav .mega-concept-b .mega-concept-b-pill {
+  height: 74px;
+}
+
+.syn-bnav .mega-concept-b .mega-concept-b-pill-hovered:not(.mega-concept-b-pill-active) {
+  background: #eaf2fc;
+  color: #5ea2ea;
+  z-index: 3;
+}
+
+.syn-bnav .mega-concept-b .mega-concept-b-pill:last-child::after {
+  display: none;
+}
+
+.syn-bnav .mega-concept-b .mega-concept-b-blob {
+  top: 6px;
+  height: 62px;
+  border-radius: 34px;
+}

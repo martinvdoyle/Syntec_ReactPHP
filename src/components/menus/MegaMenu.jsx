@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import * as LucideIcons from "lucide-react";
 import * as TablerIcons from "@tabler/icons-react";
@@ -59,7 +59,7 @@ function CascadeCol({ items, onHover, activeId }) {
             onMouseEnter={() => onHover(it)}
             className={`border-b border-slate-200 last:border-b-0 ${active ? "bg-white" : ""}`}
           >
-            <Link to={it.url || "#"} className="flex items-center justify-between px-4 py-3 text-[15px] font-semibold text-slate-600">
+            <Link to={it.url || "#"} className="flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] text-slate-700">
               <span className="flex items-center gap-2">
                 <IconMark iconClass={it.iconClass} className="h-4 w-4 text-[var(--syntec-blue)]" />
                 {rowTitle(it)}
@@ -98,7 +98,7 @@ function StandardCascade({ items = [], onClose }) {
               setL3Top(0);
             }}
           >
-            <Link to={c.url || "#"} className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-white">
+            <Link to={c.url || "#"} className="flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] text-slate-700 hover:bg-white">
               <span className="flex items-center gap-2">
                 <span className="inline-flex w-5 shrink-0 justify-center">
                   <IconMark iconClass={c.iconClass} className="h-4 w-4 text-[var(--syntec-blue)]" />
@@ -127,7 +127,7 @@ function StandardCascade({ items = [], onClose }) {
                 setL3Top(Math.max(0, rowTop - wrapTop));
               }}
             >
-              <Link to={c.url || "#"} className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-white">
+              <Link to={c.url || "#"} className="flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] text-slate-700 hover:bg-white">
                 <span className="flex items-center gap-2">
                   <span className="inline-flex w-5 shrink-0 justify-center">
                     <IconMark iconClass={c.iconClass} className="h-4 w-4 text-[var(--syntec-blue)]" />
@@ -148,7 +148,7 @@ function StandardCascade({ items = [], onClose }) {
         >
           {l3Items.map((c) => (
             <li key={c.id} className="border-b border-slate-200 last:border-b-0">
-              <Link to={c.url || "#"} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-white">
+              <Link to={c.url || "#"} className="flex items-center gap-2 px-4 py-3 text-[15px] font-semibold tracking-[0.005em] text-slate-700 hover:bg-white">
                 <span className="inline-flex w-5 shrink-0 justify-center">
                   <IconMark iconClass={c.iconClass} className="h-4 w-4 text-[var(--syntec-blue)]" />
                 </span>
@@ -169,6 +169,8 @@ export default function MegaMenu({ items = [] }) {
   const [activeL1Id, setActiveL1Id] = useState(null);
   const [activeL2Id, setActiveL2Id] = useState(null);
   const [activeStdId, setActiveStdId] = useState(null);
+  const [selectedL0Id, setSelectedL0Id] = useState(null);
+  const itemRefs = useRef(new Map());
 
   const activeL0 = l0Items.find((i) => i.id === activeL0Id) || null;
   const l1 = activeL0?.children || [];
@@ -188,23 +190,45 @@ export default function MegaMenu({ items = [] }) {
     return cols;
   }, [l1]);
 
+  const blobTargetId = hoveredTabId || selectedL0Id;
+  const [blobStyle, setBlobStyle] = useState({ left: 0, width: 176 });
+
+  useEffect(() => {
+    if (!blobTargetId) return;
+    const node = itemRefs.current.get(blobTargetId);
+    if (!node) return;
+    setBlobStyle({ left: node.offsetLeft, width: node.offsetWidth });
+  }, [blobTargetId, l0Items]);
+
   if (!l0Items.length) return null;
 
   return (
-    <div className="relative hidden border-t border-slate-200 bg-white lg:block">
-      <div className="mx-auto max-w-7xl px-3 py-2">
-        <div className="flex flex-wrap gap-2">
+    <div className="mega-concept-b relative hidden h-[78px] bg-transparent lg:block">
+      <div className="h-full w-full">
+        <div className="mega-concept-b-rail relative h-full bg-white px-[6px]">
+          {blobTargetId ? (
+            <span
+              className="mega-concept-b-blob pointer-events-none absolute top-0 z-[1] h-[78px] bg-[var(--syntec-blue)] transition-all duration-300 ease-out"
+              style={{
+                left: `${blobStyle.left + 10}px`,
+                width: `${blobStyle.width}px`,
+                opacity: hoveredTabId ? 1 : 0,
+              }}
+            />
+          ) : null}
+          <ul className="relative z-[2] m-0 flex h-full list-none items-stretch gap-[8px] p-0">
           {l0Items.map((item) => {
             const mega = isMega(item);
             const active = hoveredTabId === item.id;
+            const selected = selectedL0Id === item.id;
             return (
-              <div
+              <li
                 key={item.id}
-                className={`relative rounded-full border px-6 py-3 text-sm font-bold uppercase tracking-wide ${
-                  active
-                    ? "border-transparent bg-[var(--syntec-blue)] text-white"
-                    : "border-slate-200 text-slate-600"
-                }`}
+                ref={(el) => {
+                  if (el) itemRefs.current.set(item.id, el);
+                  else itemRefs.current.delete(item.id);
+                }}
+                className={`mega-concept-b-pill relative inline-flex h-[78px] min-w-fit shrink-0 items-center justify-center whitespace-nowrap rounded-[36px] px-[16px] text-[16px] font-bold tracking-[0.005em] transition-all duration-200 ${active ? "mega-concept-b-pill-hovered" : ""} ${selected ? "mega-concept-b-pill-active bg-[var(--syntec-blue)] text-white z-[3]" : "bg-transparent text-[#2b4465]"}`}
                 onMouseEnter={() => {
                   setHoveredTabId(item.id);
                   if (mega) {
@@ -218,40 +242,50 @@ export default function MegaMenu({ items = [] }) {
                     setActiveL0Id(null);
                   }
                 }}
+                onClick={() => setSelectedL0Id(item.id)}
+                style={{}}
               >
-                <Link to={item.url || "#"}>{rowTitle(item)}</Link>
+                <Link to={item.url || "#"} className={`block whitespace-nowrap text-center leading-tight ${active && !selected ? "text-[var(--syntec-blue)]" : ""}`}>{rowTitle(item)}</Link>
                 {!mega && activeStdId === item.id && item.children?.length ? (
                   <StandardCascade items={item.children} onClose={() => setActiveStdId(null)} />
                 ) : null}
-              </div>
+              </li>
             );
           })}
+          </ul>
         </div>
       </div>
 
       {activeL0 && isMega(activeL0) ? (
         <div
-          className="absolute left-0 top-full z-40 w-full border-t-2 border-lime-500 bg-transparent"
+          className="absolute left-0 top-full z-40 w-full bg-transparent"
           onMouseLeave={() => {
             setActiveL0Id(null);
             setHoveredTabId(null);
           }}
         >
-          <div className="mx-auto max-w-7xl">
+          <div className="w-full">
             {rowTitle(activeL0).toLowerCase() === "suppliers" ? (
               <div className="relative flex">
                 <CascadeCol items={l1} activeId={activeL1Id} onHover={(it) => { setActiveL1Id(it.id); setActiveL2Id(it.children?.[0]?.id ?? null); }} />
                 {l2.length ? <div className="ml-[1px]"><CascadeCol items={l2} activeId={activeL2Id} onHover={(it) => setActiveL2Id(it.id)} /></div> : null}
                 {l3.length ? <div className="ml-[1px]"><CascadeCol items={l3} activeId={null} onHover={() => {}} /></div> : null}
+                <div className="absolute -bottom-[10px] left-0 h-[10px] w-full overflow-hidden">
+                  <div className="flex h-full w-full">
+                    <span className="h-full w-1/3 bg-[#2f8ee5]" />
+                    <span className="h-full w-1/3 bg-[#8bc53f]" />
+                    <span className="h-full w-1/3 bg-[#505b66]" />
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="border border-slate-200 bg-[#f3f5f7] shadow-lg">
+              <div className="relative border border-slate-200 bg-[#f3f5f7] shadow-lg">
                 <div className="grid grid-cols-4">
                   {[1, 2, 3, 4].map((colNo) => (
                     <div key={colNo} className="border-r border-slate-300 p-4 last:border-r-0">
                       {groupedCols[colNo].map((group) => (
                         <div key={group.id} className="mb-6">
-                          <h4 className="inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.04em] text-slate-600">
+                          <h4 className="inline-flex items-center gap-2 text-[13px] font-bold tracking-[0.01em] text-slate-600">
                             <span className="inline-flex w-5 shrink-0 justify-center">
                               <IconMark iconClass={groupIcon(group)} className="h-[18px] w-[18px] text-[var(--syntec-blue)]" />
                             </span>
@@ -264,7 +298,7 @@ export default function MegaMenu({ items = [] }) {
                           <ul>
                             {(group.children || []).map((it) => (
                               <li key={it.id} className="border-b border-slate-200 py-2">
-                                <Link to={it.url || "#"} className="flex items-center gap-2 text-[15px] font-semibold uppercase tracking-[0.02em] text-slate-700">
+                                <Link to={it.url || "#"} className="flex items-center gap-2 text-[15px] font-semibold tracking-[0.005em] text-slate-700">
                                   <span className="inline-flex w-5 shrink-0 justify-center">
                                     <IconMark iconClass={it.iconClass} className="h-[18px] w-[18px] text-[var(--syntec-blue)]" />
                                   </span>
@@ -277,6 +311,13 @@ export default function MegaMenu({ items = [] }) {
                       ))}
                     </div>
                   ))}
+                </div>
+                <div className="absolute -bottom-[10px] left-0 h-[10px] w-full overflow-hidden">
+                  <div className="flex h-full w-full">
+                    <span className="h-full w-1/3 bg-[#2f8ee5]" />
+                    <span className="h-full w-1/3 bg-[#8bc53f]" />
+                    <span className="h-full w-1/3 bg-[#505b66]" />
+                  </div>
                 </div>
               </div>
             )}

@@ -92,52 +92,54 @@ export default function Header() {
         </div>
       </div>
 
-      <div className="relative w-full px-4 py-3.5 border-t border-slate-200">
+      <div className="syn-bnav relative w-full border-t border-slate-200 px-4 py-0">
         <div className="mx-auto max-w-[1240px]">
-          <div className="relative h-[58px]">
-        <div className="absolute left-0 top-1/2 -translate-y-1/2">
-          <Link to="/" className="inline-block">
-            <img src="/assets/images/Syntec_Group_Logo_Small.png" alt="Syntec" className="h-14 w-auto" />
-          </Link>
-        </div>
-        <div className="mx-auto hidden min-w-0 lg:block relative z-50">
-          <div className="mx-auto w-fit">
-            <MegaMenu items={rootItems} />
-          </div>
-        </div>
-        <div className="absolute right-0 top-1/2 z-[70] flex -translate-y-1/2 justify-end items-center gap-3">
-          <div className="hidden lg:flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap">
-            <select
-              className="w-[92px] cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
-              value={lang}
-              onChange={(e) => {
-                const nextLang = e.target.value;
-                setLang(nextLang);
-                localStorage.setItem("syntec_lang", nextLang);
-                window.dispatchEvent(new CustomEvent("syntec-language-change", { detail: nextLang }));
-              }}
-            >
-              {languageOptions.map((opt) => (
-                <option key={opt.code} value={opt.code}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <img
-              src={languageOptions.find((x) => x.code === lang)?.flag || "/assets/images/flags/gb.svg"}
-              alt={lang}
-              className="h-4 w-6 rounded-sm border border-slate-300"
-            />
-          </div>
-          <button
-            type="button"
-            className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 lg:hidden"
-            onClick={() => setMobileOpen((prev) => !prev)}
-          >
-            Menu
-          </button>
-        </div>
-          </div>
+            <div className="syn-bnav-row grid h-[74px] grid-cols-1 items-stretch gap-0 lg:grid-cols-[180px_minmax(0,1fr)_170px]">
+            <div className="syn-bnav-logo justify-self-start lg:w-[180px]">
+              <Link to="/" className="relative z-50 inline-flex h-full items-center pl-2 pr-2">
+                <img src="/assets/images/Syntec_Group_Logo_Small.png" alt="Syntec" className="h-14 w-auto" />
+              </Link>
+            </div>
+
+            <div className="relative z-50 hidden min-w-0 lg:block">
+              <div className="mx-auto w-full">
+                <MegaMenu items={rootItems} />
+              </div>
+            </div>
+
+            <div className="syn-bnav-lang z-[70] flex items-center justify-end gap-2 lg:w-[170px]">
+              <div className="hidden items-center gap-2 whitespace-nowrap text-sm text-slate-600 lg:flex">
+                <select
+                  className="w-[92px] cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
+                  value={lang}
+                  onChange={(e) => {
+                    const nextLang = e.target.value;
+                    setLang(nextLang);
+                    localStorage.setItem("syntec_lang", nextLang);
+                    window.dispatchEvent(new CustomEvent("syntec-language-change", { detail: nextLang }));
+                  }}
+                >
+                  {languageOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <img
+                  src={languageOptions.find((x) => x.code === lang)?.flag || "/assets/images/flags/gb.svg"}
+                  alt={lang}
+                  className="h-4 w-6 rounded-sm border border-slate-300"
+                />
+              </div>
+              <button
+                type="button"
+                className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 lg:hidden"
+                onClick={() => setMobileOpen((prev) => !prev)}
+              >
+                Menu
+              </button>
+            </div>
+            </div>
         </div>
       </div>
       <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} items={menuItems} />
