@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as LucideIcons from "lucide-react";
 import * as TablerIcons from "@tabler/icons-react";
@@ -18,6 +18,9 @@ export default function ProductsPage() {
   const [showEnquiry, setShowEnquiry] = useState(false);
   const [enquirySent, setEnquirySent] = useState(false);
   const [enquiryForm, setEnquiryForm] = useState({ name: "", company: "", email: "", message: "" });
+  const [videoOpen, setVideoOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(60);
+  const loadMoreRef = useRef(null);
 
   useEffect(() => {
     const onLanguageChange = (event) => {
@@ -35,10 +38,12 @@ export default function ProductsPage() {
   useEffect(() => {
     if (activeProduct) {
       setDrawerVisible(false);
+      setVideoOpen(false);
       const id = requestAnimationFrame(() => setDrawerVisible(true));
       return () => cancelAnimationFrame(id);
     }
     setDrawerVisible(false);
+    setVideoOpen(false);
   }, [activeProduct]);
 
   const toProductImageUrl = (rawValue) => {
@@ -72,6 +77,8 @@ export default function ProductsPage() {
           about1: String(p.about_1 || ""),
           about2: String(p.about_2 || ""),
           aboutHtml: String(p.about_1 || ""),
+          productLink: String(p.product_link || ""),
+          classColour: String(p.supplier_class_colour || p.class_colour || "").trim(),
           supplierLogo: p.supplier_logo_small || p.supplier_logo_large || "",
           image: toProductImageUrl(p.product_image_display || p.product_image_1 || p.product_image_large),
         }));
@@ -108,26 +115,84 @@ export default function ProductsPage() {
     });
   }, [discipline, group, query, products]);
 
+  const visibleProducts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+
+  useEffect(() => {
+    setVisibleCount(60);
+  }, [discipline, group, query, lang]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        setVisibleCount((prev) => Math.min(prev + 60, filtered.length));
+      },
+      { root: null, rootMargin: "600px 0px", threshold: 0.01 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [filtered.length]);
+
   const toggleLegacyAccordion = (event) => {
     const trigger = event.target.closest("[data-toggle='collapse'], .panel-title a");
     if (!trigger) return;
     event.preventDefault();
     const root = event.currentTarget;
     const panel = trigger.closest(".panel");
-    const targetRef = trigger.getAttribute("href") || trigger.getAttribute("data-target") || trigger.getAttribute("aria-controls") || "";
-    const targetId = targetRef.startsWith("#") ? targetRef.slice(1) : targetRef;
-    const target = targetId
-      ? Array.from(root.querySelectorAll(".panel-collapse[id]")).find((el) => el.id === targetId)
-      : panel?.querySelector(".panel-collapse");
+    const targetRef = (
+      trigger.getAttribute("data-target") ||
+      trigger.getAttribute("href") ||
+      trigger.getAttribute("aria-controls") ||
+      ""
+    ).trim();
+    const hashRef = targetRef.includes("#") ? `#${targetRef.split("#").pop()}` : targetRef;
+
+    let target = null;
+    if (hashRef.startsWith("#")) {
+      try {
+        target = root.querySelector(hashRef);
+      } catch {
+        target = null;
+      }
+    } else if (hashRef.startsWith(".") || hashRef.startsWith("[")) {
+      try {
+        target = panel?.querySelector(hashRef) || root.querySelector(hashRef);
+      } catch {
+        target = null;
+      }
+    }
+    if (!target) {
+      target = panel?.querySelector(".panel-collapse") || null;
+    }
     if (!target) return;
     const isOpen = target.classList.contains("show") || target.classList.contains("in");
     target.classList.toggle("show", !isOpen);
     target.classList.toggle("in", !isOpen);
     target.style.height = "";
-    target.style.display = "";
+    target.style.display = !isOpen ? "block" : "none";
     target.setAttribute("aria-expanded", String(!isOpen));
     trigger.classList.toggle("collapsed", isOpen);
     trigger.setAttribute("aria-expanded", String(!isOpen));
+    const triggerText = (trigger.textContent || "").toLowerCase();
+    if (!isOpen && triggerText.includes("video")) {
+      const media = extractLegacyMedia(activeProduct?.aboutHtml || "");
+      if (media.mp4) {
+        const panelBody = target.querySelector(".panel-body") || target;
+        if (!panelBody.querySelector("video[data-recovered='1']")) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "legacy-video-recovered";
+          wrapper.innerHTML = `
+            <video data-recovered="1" ${media.poster ? `poster="${media.poster}"` : ""} controls style="max-width: 100%; height: auto;">
+              <source src="${media.mp4}" type="video/mp4" />
+            </video>
+          `;
+          panelBody.appendChild(wrapper);
+        }
+      }
+    }
   };
 
   const toSupplierLogoUrl = (rawValue) => {
@@ -186,13 +251,39 @@ export default function ProductsPage() {
     }
     return "";
   };
+  const extractLegacyMedia = (raw) => {
+    const decoded = decodeHtml(raw);
+    const find = (re) => {
+      const m = decoded.match(re);
+      return m ? m[0] : "";
+    };
+    const mp4Raw = find(/(?:#WORKSPACE_FILES#assets\/|\/assets\/)[^"'\s>]+\.mp4/i);
+    const posterRaw = find(/(?:#WORKSPACE_FILES#assets\/|\/assets\/)[^"'\s>]+\.jpg/i);
+    return {
+      mp4: mp4Raw ? mp4Raw.replace(/^#WORKSPACE_FILES#assets\//i, "/assets/") : "",
+      poster: posterRaw ? posterRaw.replace(/^#WORKSPACE_FILES#assets\//i, "/assets/") : "",
+    };
+  };
+  const extractLegacyVideoTitle = (raw, fallbackName) => {
+    const decoded = decodeHtml(raw);
+    const m = decoded.match(/<a[^>]*>\s*(?:<[^>]+>\s*)*([^<]*?video)\s*<\/a>/i);
+    const title = (m?.[1] || "").replace(/\s+/g, " ").trim();
+    if (title) return title;
+    return `${fallbackName} Video`;
+  };
   const renderRichHtml = (raw) => {
     const decoded = decodeHtml(raw);
     if (typeof DOMParser === "undefined") return decoded;
+    const sanitizedHtml = decoded
+      .replace(/([a-zA-Z_:][\w:.-]*)\s*=\s*''([^']*?)''/g, '$1="$2"')
+      .replace(/\b(src|href|poster)\s*=\s*''([^']*?)''/gi, '$1="$2"')
+      .replace(/\b(src|href|poster)\s*=\s*""([^"]*?)""/gi, '$1="$2"');
     const parser = new DOMParser();
-    const doc = parser.parseFromString(decoded, "text/html");
+    const doc = parser.parseFromString(sanitizedHtml, "text/html");
     const normalizeLegacyAssetPath = (value) => {
-      const rawPath = String(value || "").trim();
+      const rawPath = String(value || "")
+        .trim()
+        .replace(/^['"]+|['"]+$/g, "");
       if (!rawPath) return "";
       const withoutWorkspace = rawPath.replace(/^#WORKSPACE_FILES#\/?/i, "");
       if (withoutWorkspace === rawPath && (rawPath.startsWith("http") || rawPath.startsWith("mailto:") || rawPath.startsWith("#"))) return rawPath;
@@ -205,6 +296,30 @@ export default function ProductsPage() {
     doc.querySelectorAll("img[src]").forEach((el) => {
       const normalized = normalizeLegacyAssetPath(el.getAttribute("src"));
       if (normalized) el.setAttribute("src", normalized);
+    });
+    doc.querySelectorAll("source[src], video[src], iframe[src]").forEach((el) => {
+      const normalized = normalizeLegacyAssetPath(el.getAttribute("src"));
+      if (normalized) el.setAttribute("src", normalized);
+    });
+    doc.querySelectorAll("video[poster]").forEach((el) => {
+      const normalized = normalizeLegacyAssetPath(el.getAttribute("poster"));
+      if (normalized) el.setAttribute("poster", normalized);
+    });
+    doc.querySelectorAll("video").forEach((videoEl) => {
+      videoEl.remove();
+    });
+    doc.querySelectorAll(".panel-collapse").forEach((el) => {
+      el.classList.remove("show", "in", "active");
+      el.style.display = "none";
+      el.setAttribute("aria-expanded", "false");
+    });
+    doc.querySelectorAll("[data-toggle='collapse'], .panel-title a").forEach((trigger) => {
+      trigger.classList.add("collapsed");
+      trigger.setAttribute("aria-expanded", "false");
+    });
+    Array.from(doc.querySelectorAll(".panel")).forEach((panel) => {
+      const title = (panel.querySelector(".panel-title a, .panel-title")?.textContent || "").toLowerCase();
+      if (title.includes("video")) panel.remove();
     });
     doc.querySelectorAll("a[href]").forEach((el) => {
       const normalized = normalizeLegacyAssetPath(el.getAttribute("href"));
@@ -277,15 +392,15 @@ export default function ProductsPage() {
           {error ? <p className="mb-4 text-sm text-rose-700">{error}</p> : null}
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((p) => (
+            {visibleProducts.map((p) => (
               <article key={p.id} className="group flex h-full flex-col overflow-hidden rounded border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="h-56 w-full bg-slate-100 p-3">
+                <div className="h-56 w-full border-b border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#f8fafc_45%,#eef2f7_100%)] p-3">
                   <img src={p.image} alt={p.name} className="h-full w-full object-contain" />
                 </div>
                 <div className="flex flex-1 flex-col p-3">
-                  <div className="mb-2 flex flex-wrap gap-1">
-                    <span className="rounded bg-[#e8f3ff] px-2 py-0.5 text-[10px] font-bold uppercase text-[#2e78bc]">{p.discipline}</span>
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">{p.group}</span>
+                  <div className="mb-2 flex flex-wrap justify-center gap-2">
+                    <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{p.discipline}</span>
+                    <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{p.group}</span>
                   </div>
                   <h4 className="line-clamp-2 border-l-4 border-[#5ca2ea] pl-2 text-base font-bold text-[#173a61]">{p.name}</h4>
                   <div className="mt-2 flex items-center justify-between gap-2">
@@ -317,6 +432,11 @@ export default function ProductsPage() {
               </article>
             ))}
           </div>
+          {visibleCount < filtered.length ? (
+            <div ref={loadMoreRef} className="py-6 text-center text-sm font-semibold text-slate-500">
+              Loading more products...
+            </div>
+          ) : null}
           {activeProduct ? (
             <div className="absolute inset-0 z-50 overflow-hidden">
               <button
@@ -326,20 +446,37 @@ export default function ProductsPage() {
                 onClick={() => setActiveProduct(null)}
               />
               <aside
-                className={`absolute bottom-0 right-0 top-0 h-full w-full max-w-[560px] overflow-y-auto border-l border-[#c8d8e8] bg-white shadow-2xl transition-transform duration-300 ease-out ${
+                className={`absolute bottom-0 right-0 top-0 h-full w-full max-w-[760px] overflow-y-auto border-l border-[#c8d8e8] bg-white shadow-2xl transition-transform duration-300 ease-out ${
                   drawerVisible ? "translate-x-0" : "translate-x-full"
                 }`}
               >
-                <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 border-t-4 border-t-[#5ca2ea] bg-white px-5 py-3">
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 border-t-4 border-t-[#5ca2ea] bg-gradient-to-b from-[#f8fbff] to-[#eef4fa] px-5 py-3 shadow-[inset_0_1px_0_#ffffff]">
                   <div className="min-w-0 flex-1">
                     <h3 className="border-l-4 border-[#5ca2ea] pl-3 text-xl font-black leading-tight text-[#173a61]">{activeProduct.name}</h3>
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <p className="text-sm font-bold text-slate-900">{activeProduct.supplier}</p>
-                      {toSupplierLogoUrl(activeProduct.supplierLogo) ? (
-                        <img src={toSupplierLogoUrl(activeProduct.supplierLogo)} alt={activeProduct.supplier} className="h-8 w-auto max-w-[130px] object-contain" />
-                      ) : null}
-                    </div>
+                    <p className="mt-2 text-base font-bold text-slate-900">{activeProduct.supplier}</p>
                   </div>
+                  {toSupplierLogoUrl(activeProduct.supplierLogo) ? (
+                    <div className="hidden sm:flex h-16 min-w-[150px] items-center justify-center px-4">
+                      <img src={toSupplierLogoUrl(activeProduct.supplierLogo)} alt={activeProduct.supplier} className="h-9 w-auto max-w-[130px] object-contain" />
+                    </div>
+                  ) : null}
+                  {/^https?:\/\//i.test(String(activeProduct.productLink || "").trim()) ? (
+                    <a
+                      href={activeProduct.productLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`Open supplier page for ${activeProduct.name}`}
+                      style={{ "--hover-bg": activeProduct.classColour || "#4a92dc" }}
+                      className="group shrink-0 rounded-md bg-[#5ca2ea] px-3 py-2 text-sm font-semibold !text-white visited:!text-white shadow-sm transition hover:bg-[var(--hover-bg)]"
+                    >
+                      <span className="flex items-center gap-2 whitespace-nowrap">
+                        <span className="group-hover:hidden">Supplier Info.</span>
+                        <span className="hidden group-hover:inline">{activeProduct.name}</span>
+                        <LucideIcons.ExternalLink className="h-4 w-4 group-hover:hidden" />
+                        <LucideIcons.ArrowUpRight className="hidden h-4 w-4 group-hover:inline" />
+                      </span>
+                    </a>
+                  ) : null}
                   <button
                     type="button"
                     className="shrink-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:bg-[#f4f9ff] hover:text-[#173a61]"
@@ -349,19 +486,53 @@ export default function ProductsPage() {
                   </button>
                 </div>
                 <div className="space-y-4 p-5">
-                  <div className="h-56 w-full rounded border border-slate-200 bg-slate-50 p-3">
+                  <div className="h-80 w-full rounded border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#f8fafc_45%,#eef2f7_100%)] p-3">
                     <img src={activeProduct.image} alt={activeProduct.name} className="h-full w-full object-contain" />
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded bg-[#e8f3ff] px-2 py-0.5 text-[10px] font-bold uppercase text-[#2e78bc]">{activeProduct.discipline}</span>
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">{activeProduct.group}</span>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{activeProduct.discipline}</span>
+                    <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{activeProduct.group}</span>
                   </div>
                   {activeProduct.aboutHtml ? (
-                    <div
-                      className="legacy-products-content max-w-none text-slate-700"
-                      onClick={toggleLegacyAccordion}
-                      dangerouslySetInnerHTML={{ __html: renderRichHtml(activeProduct.aboutHtml) }}
-                    />
+                    <>
+                      {(() => {
+                        const renderedAbout = renderRichHtml(activeProduct.aboutHtml);
+                        const media = extractLegacyMedia(activeProduct.aboutHtml);
+                        const videoTitle = extractLegacyVideoTitle(activeProduct.aboutHtml, activeProduct.name);
+                        return (
+                          <>
+                            <div
+                              className="legacy-products-content max-w-none text-slate-700"
+                              onClick={toggleLegacyAccordion}
+                              dangerouslySetInnerHTML={{ __html: renderedAbout }}
+                            />
+                            {media.mp4 ? (
+                              <div className="rounded border border-slate-300 bg-[#dcdcdc]">
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center justify-between px-4 py-3 text-left text-base font-extrabold text-slate-900"
+                                  onClick={() => setVideoOpen((v) => !v)}
+                                  aria-expanded={videoOpen}
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <LucideIcons.Video className="h-4 w-4 text-cyan-700" />
+                                    {videoTitle}
+                                  </span>
+                                  <LucideIcons.ChevronDown className={`h-4 w-4 text-slate-700 transition-transform ${videoOpen ? "rotate-180" : ""}`} />
+                                </button>
+                                {videoOpen ? (
+                                  <div className="border-t border-slate-300 bg-white p-3">
+                                    <video controls poster={media.poster || undefined} className="mx-auto block h-auto w-full max-w-[760px] bg-black">
+                                      <source src={media.mp4} type="video/mp4" />
+                                    </video>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </>
+                        );
+                      })()}
+                    </>
                   ) : (
                     <p className="text-sm leading-6 text-slate-700">{textSnippet(activeProduct.about)}</p>
                   )}

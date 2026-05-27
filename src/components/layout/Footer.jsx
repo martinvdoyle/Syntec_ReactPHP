@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="border-t border-slate-200 bg-[#c8ddf1]">
         <div className="mx-auto grid max-w-[1240px] gap-8 px-4 py-10 md:grid-cols-4">
           <div>
-            <img src="/assets/images/Syntec_Group_Logo_Small.png" alt="Syntec" className="h-11 w-auto" />
+            <img src="/assets/images/Logos/Syntec_Group_Logo_Small.png" alt="Syntec" className="h-11 w-auto" />
             <p className="mt-3 text-sm text-slate-700">Supplier of premium scientific and clinical instruments.</p>
           </div>
           <div>

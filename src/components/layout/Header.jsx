@@ -18,19 +18,17 @@ export default function Header() {
   const [isSticky, setIsSticky] = useState(false);
   const [languageOptions, setLanguageOptions] = useState([]);
   const [lang, setLang] = useState(() => localStorage.getItem("syntec_lang") || "en");
+  const [website, setWebsite] = useState(() => localStorage.getItem("syntec_website") || "Syntec Scientific");
+
+  const loadMenu = (site) => {
+    fetchMenu({ business: "Ireland", website: site }).then((items) => {
+      if (Array.isArray(items) && items.length > 0) setMenuItems(items);
+    });
+  };
 
   useEffect(() => {
-    let mounted = true;
-
-    fetchMenu({ business: "Ireland", website: "Syntec Scientific" }).then((items) => {
-      if (mounted && Array.isArray(items) && items.length > 0) {
-        setMenuItems(items);
-      }
-    });
-
-    return () => {
-      mounted = false;
-    };
+    loadMenu(website);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -74,6 +72,10 @@ export default function Header() {
     () => menuItems.filter((i) => i.parentId == null),
     [menuItems]
   );
+  const websiteOptions = useMemo(() => {
+    const values = Array.from(new Set(menuItems.map((x) => String(x.website || "").trim()).filter(Boolean)));
+    return values.length ? values : ["Syntec Group", "Syntec Scientific", "Syntec International", "SyS Laboratories"];
+  }, [menuItems]);
 
   return (
     <header className="sticky top-0 z-[80] border-b border-slate-200 bg-white shadow-sm">
@@ -109,6 +111,20 @@ export default function Header() {
 
             <div className="syn-bnav-lang z-[70] flex items-center justify-end gap-2 lg:w-[170px]">
               <div className="hidden items-center gap-2 whitespace-nowrap text-sm text-slate-600 lg:flex">
+                <select
+                  className="w-[138px] cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
+                  value={website}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setWebsite(next);
+                    localStorage.setItem("syntec_website", next);
+                    loadMenu(next);
+                  }}
+                >
+                  {websiteOptions.map((w) => (
+                    <option key={w} value={w}>{w}</option>
+                  ))}
+                </select>
                 <select
                   className="w-[92px] cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
                   value={lang}

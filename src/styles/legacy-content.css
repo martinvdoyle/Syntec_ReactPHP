@@ -320,6 +320,36 @@
   border-radius: 0.5rem;
 }
 
+.legacy-products-content .post-image video,
+.legacy-products-content .post-item video,
+.legacy-suppliers-content .post-image video,
+.legacy-suppliers-content .post-item video {
+  display: block !important;
+  width: 100% !important;
+  max-width: 760px !important;
+  min-height: 240px;
+  height: auto !important;
+  margin: 0 auto !important;
+  background: #000;
+}
+
+.legacy-products-content .post-image source,
+.legacy-products-content .post-item source,
+.legacy-suppliers-content .post-image source,
+.legacy-suppliers-content .post-item source {
+  display: block;
+}
+
+.legacy-products-content .legacy-video-fallback-link,
+.legacy-suppliers-content .legacy-video-fallback-link {
+  display: inline-block;
+  margin-top: 0.55rem;
+  color: #1d4ed8;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 .legacy-products-content :where(.post-item, .portfolio-item, .gallery),
 .legacy-suppliers-content :where(.post-item, .portfolio-item, .gallery) {
   margin: 0.75rem 0;
@@ -410,14 +440,22 @@
 
 .legacy-products-content .panel-title > a::after,
 .legacy-suppliers-content .panel-title > a::after {
-  content: "⌄";
+  content: "";
   position: absolute;
-  right: 0.95rem;
+  right: 1rem;
   top: 50%;
-  transform: translateY(-54%);
-  color: #111827;
-  font-size: 1.2rem;
-  font-weight: 700;
+  width: 0.58rem;
+  height: 0.58rem;
+  border-right: 2px solid #334155;
+  border-bottom: 2px solid #334155;
+  transform: translateY(-62%) rotate(45deg);
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+
+.legacy-products-content .panel-title > a[aria-expanded="true"]::after,
+.legacy-suppliers-content .panel-title > a[aria-expanded="true"]::after {
+  transform: translateY(-38%) rotate(-135deg);
+  border-color: #0f172a;
 }
 
 .legacy-products-content .panel-collapse.collapse,
@@ -487,6 +525,9 @@
 .legacy-products-content :where(.fx, .animated, .fadeInRight, .fadeInLeft, .fadeInDown, .bounceInRight, .bounceInright, .bounceInLeft),
 .legacy-suppliers-content :where(.fx, .animated, .fadeInRight, .fadeInLeft, .fadeInDown, .bounceInRight, .bounceInright, .bounceInLeft) {
   animation: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
 }
 
 .legacy-products-content :where(.fa, .fas, .fa-solid, .fa-custom),

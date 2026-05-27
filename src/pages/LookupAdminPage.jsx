@@ -31,7 +31,7 @@ const ORACLE_COLUMNS = {
     "discipline_image_1",
     "discipline_image_2",
   ],
-  product_group: ["deleted","active","product_group_id","product_group_name","discipline_name","product_group_icon_class","product_group_order","date_created","date_deleted","anchor_id","discipline_id","product_group_image_1","product_group_image_2"],
+  product_group: ["deleted","active","product_group_id","product_group_name","discipline_id","product_group_icon_class","product_group_order","date_created","date_deleted","anchor_id","product_group_image_1","product_group_image_2"],
   product_type: ["deleted","active","product_type_id","product_type_name","product_type_icon_class","product_type_order","date_created","date_deleted","anchor_id"],
   divisions: ["deleted","active","division_id","division_description","sort_order","date_created","date_deleted","anchor_id"],
   job_titles: ["deleted","active","job_title_id","job_title_description","sort_order","date_created","date_deleted","anchor_id"],
@@ -68,7 +68,7 @@ const TRANSLATABLE_TABLES = new Set([
 export default function LookupAdminPage({ tableKey }) {
   const cfg = TABLE_CONFIG[tableKey];
   const isTranslatable = TRANSLATABLE_TABLES.has(tableKey);
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState(() => localStorage.getItem("syntec_lang") || "en");
   const [languageOptions, setLanguageOptions] = useState([]);
   const [items, setItems] = useState([]);
   const [columns, setColumns] = useState([]);
@@ -78,6 +78,7 @@ export default function LookupAdminPage({ tableKey }) {
   const [filterActiveY, setFilterActiveY] = useState(true);
   const [filterDeletedN, setFilterDeletedN] = useState(false);
   const [form, setForm] = useState({});
+  const [disciplineItems, setDisciplineItems] = useState([]);
   const [isNew, setIsNew] = useState(false);
   const [error, setError] = useState("");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -113,6 +114,12 @@ export default function LookupAdminPage({ tableKey }) {
       setError("");
       const data = await fetchTableAdmin(cfg.table, isTranslatable ? lang : undefined);
       const rows = data.items || [];
+      if (tableKey === "product_group") {
+        const d = await fetchTableAdmin("syntec_discipline", lang);
+        setDisciplineItems(d.items || []);
+      } else {
+        setDisciplineItems([]);
+      }
       setItems(rows);
       setColumns(data.columns || []);
       if (!rows.length) {
@@ -133,10 +140,18 @@ export default function LookupAdminPage({ tableKey }) {
         const opts = (r?.items || []).filter((x) => String(x.is_active || "Y").toUpperCase() === "Y")
           .map((x) => ({ code: String(x.lang_code), label: `${x.lang_name} (${x.lang_code})`, flag: x.flag_path || "/assets/images/flags/gb.svg" }));
         setLanguageOptions(opts);
-        if (opts.length && !opts.some((o) => o.code === lang)) setLang(opts[0].code);
+        if (opts.length && !opts.some((o) => o.code === lang)) {
+          const next = opts[0].code;
+          setLang(next);
+          localStorage.setItem("syntec_lang", next);
+        }
       })
       .catch(() => setLanguageOptions([{ code: "en", label: "English (en)", flag: "/assets/images/flags/gb.svg" }]));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("syntec_lang", lang);
+  }, [lang]);
 
   useEffect(() => { load(); }, [cfg?.table, tableKey, lang]);
   const selected = useMemo(() => items.find((x) => getRowKey(x) === selectedId) || null, [items, selectedId]);
@@ -194,14 +209,19 @@ export default function LookupAdminPage({ tableKey }) {
   const disciplineOptions = useMemo(() => {
     if (!isProductGroup) return [];
     const seen = new Map();
-    items.forEach((row) => {
+    disciplineItems.forEach((row) => {
       const id = String(row?.discipline_id ?? "").trim();
       const name = String(row?.discipline_name ?? "").trim();
       if (!id) return;
       if (!seen.has(id)) seen.set(id, name || id);
     });
     return Array.from(seen.entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-  }, [items, isProductGroup]);
+  }, [disciplineItems, isProductGroup]);
+  const disciplineNameById = useMemo(() => {
+    const map = new Map();
+    disciplineOptions.forEach(([id, name]) => map.set(String(id), String(name)));
+    return map;
+  }, [disciplineOptions]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -276,7 +296,11 @@ export default function LookupAdminPage({ tableKey }) {
           <select
             className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
             value={lang}
-            onChange={(e) => setLang(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setLang(next);
+              localStorage.setItem("syntec_lang", next);
+            }}
           >
             {languageOptions.map((opt) => (
               <option key={opt.code} value={opt.code}>
@@ -387,7 +411,7 @@ export default function LookupAdminPage({ tableKey }) {
                   </p>
                   {tableKey === "product_group" ? (
                     <p className="mt-0.5 truncate text-xs font-medium text-slate-600">
-                      {String(r.discipline_name || "(no discipline)")}
+                      {String(disciplineNameById.get(String(r.discipline_id ?? "").trim()) || r.discipline_id || "(no discipline)")}
                     </p>
                   ) : null}
                 </button>
@@ -398,11 +422,50 @@ export default function LookupAdminPage({ tableKey }) {
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Edit Fields</h3>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 text-sm">
-            {visibleColumns.map((k) => (
+          <div className="mx-auto w-full max-w-[52%]">
+            <div className="mb-2 inline-grid grid-cols-2 gap-3 text-sm">
+              {visibleColumns
+                .filter((k) => {
+                  const kk = String(k).toLowerCase();
+                  return kk === "active" || kk === "deleted";
+                })
+                .map((k) => (
+                <label key={k} className="flex flex-col gap-1">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">{k}</span>
+                  {isYnField(k, form[k]) ? (
+                    <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={String(form[k] ?? "N").toUpperCase() === "Y"}
+                        onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.checked ? "Y" : "N" }))}
+                      />
+                      <span>{String(form[k] ?? "N").toUpperCase() === "Y" ? "Y" : "N"}</span>
+                    </label>
+                  ) : null}
+                </label>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-2 text-sm">
+            {visibleColumns
+              .filter((k) => {
+                const kk = String(k).toLowerCase();
+                return kk !== "active" && kk !== "deleted";
+              })
+              .map((k) => (
               <label key={k} className="flex flex-col gap-1">
                 <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">{k}</span>
-                {isYnField(k, form[k]) ? (
+                {tableKey === "product_group" && k === "discipline_id" ? (
+                  <select
+                    className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                    value={form[k] ?? ""}
+                    onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))}
+                  >
+                    <option value="">Select discipline...</option>
+                    {disciplineOptions.map(([id, name]) => (
+                      <option key={id} value={id}>{name}</option>
+                    ))}
+                  </select>
+                ) : isYnField(k, form[k]) ? (
                   <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
                     <input
                       type="checkbox"
@@ -416,8 +479,9 @@ export default function LookupAdminPage({ tableKey }) {
                 )}
               </label>
             ))}
+            </div>
           </div>
-          <div className="mt-4 flex gap-2">
+          <div className="mx-auto mt-4 flex w-full max-w-[52%] justify-center gap-2">
             <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" onClick={save}>Save</button>
             {!isNew && selected ? <button className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white" onClick={remove}>Delete</button> : null}
           </div>

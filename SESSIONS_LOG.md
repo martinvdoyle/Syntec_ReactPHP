@@ -503,3 +503,127 @@ User can provide starter package containing:
 4. If build passes and UI checks out, update git:
    - commit modified source files
    - leave `Mysql_Exports/*` WIP files untracked unless explicitly requested
+
+## Implementation Note (2026-05-25)
+
+- Product UI parity rule:
+  - Any drawer/preview visual or behavior change must be applied to both:
+    - `src/pages/ProductsPage.jsx` (public drawer path)
+    - `src/pages/ProductsAdminPage.jsx` (admin live preview path)
+  - Do not ship a product drawer-related change unless both paths are reviewed and updated in the same change set.
+
+## Outstanding Items (Low Priority)
+- Menu label resolver + i18n strategy (deferred):
+  - Runtime rule agreed:
+    - If `supplier_id` present -> use supplier name (not translated).
+    - Else if `product_group_id` present -> use product-group translated name for selected language.
+    - Else -> use static menu label translation for selected language.
+  - Non supplier/product-group items should use menu-label translations (with English fallback).
+  - This is intentionally deferred while higher-priority UI/menu stability tasks proceed.
+
+- Screen/UI text translation rollout (deferred):
+  - Translate all screen labels/controls/dropdowns/headings based on selected language.
+  - Keep current language selection behavior but defer full label coverage implementation.
+  - This is explicitly not a current priority and should be resumed later.
+
+### Deferred Translation Process Notes (Agreed)
+- Scope status: deferred by priority, but process is agreed and should be followed when resumed.
+
+- Source-of-truth principle:
+  - Use ID/FK-driven lookup values for translatable labels where possible.
+  - Avoid using redundant plain-text columns when an ID-based lookup exists.
+
+- Menu label resolution process (agreed):
+  1) If `supplier_id` is populated on a menu row, render supplier name directly (supplier names are not translated).
+  2) Else if `product_group_id` is populated, render product-group name from language-aware product-group source for selected language.
+  3) Else render static menu label from menu translation source for selected language.
+  4) Fallback chain for static labels: selected language -> English/base -> existing `sub_menu_name` -> `menu_name`.
+
+- Tables/process referenced in agreement:
+  - `syntec_menu_items` remains structural menu source.
+  - `supplier_id` and `product_group_id` drive dynamic label resolution.
+  - `syntec_product_group_i18n` (or equivalent product-group language table) should provide translated group names by `lang`.
+  - Supplier display name should come from supplier master table (`syntec_suppliers` / supplier i18n policy as agreed: do not translate supplier brand names).
+  - Static non-supplier/non-product-group labels should use a menu i18n table/process (to be implemented), keyed by menu item + language.
+
+- Screen/UI translation process (agreed direction):
+  - Translate page labels, control labels, dropdown labels, headings, and helper text by selected language.
+  - Keep language selection state and apply consistently across Products/Suppliers/Admin/public screens.
+  - Resume only after current menu/runtime stabilization tasks are complete.
+
+### Screen Label i18n Contract (Agreed)
+- Purpose: provide language-driven UI/screen text for labels, headings, dropdown captions, helper text, button text, and validation messages without hardcoding.
+
+- Primary table (agreed): `syntec_ui_labels_i18n`
+  - Recommended columns:
+    - `label_key` VARCHAR (stable unique key, e.g. `products.filter.discipline`)
+    - `lang` CHAR(2) (e.g. `en`, `fr`, `it`)
+    - `label_text` TEXT/VARCHAR
+    - `context` VARCHAR nullable (optional scope like `public`, `admin`, `products`)
+    - `updated_at` TIMESTAMP
+    - `updated_by` VARCHAR nullable
+  - Recommended PK/unique:
+    - `(label_key, lang)`
+
+- Optional metadata/source table (if needed for governance):
+  - `syntec_ui_labels` (base key registry)
+    - `label_key` PK
+    - `default_text_en`
+    - `module`
+    - `description`
+    - `active`
+
+- Runtime lookup/fallback rules (agreed):
+  1) Try selected language row from `syntec_ui_labels_i18n`.
+  2) Fallback to English (`lang='en'`).
+  3) Fallback to hardcoded safe default in component.
+
+- Key naming convention (agreed):
+  - Dot notation by module/page/element, examples:
+    - `products.title`
+    - `products.filter.discipline`
+    - `products.filter.product_group`
+    - `products.search.placeholder`
+
+## Menu Context Rule Lock (2026-05-27)
+
+- Status: implemented and must be preserved.
+
+- Problem solved:
+  - When user is in one business context (example: `International`) and clicks a menu item that belongs to another L0 destination (example: `Syntec Scientific`), the business dropdown and menu context must switch to the clicked item destination context.
+
+- Required runtime behavior:
+  1) Determine context from the **actual clicked target item path** (clicked item -> parent chain -> owning `L0`).
+  2) Apply that owning `L0` context to header/menu state:
+     - `businessSet`
+     - `websiteSet` (fallback `website`)
+  3) Sync visible business dropdown value from resolved context:
+     - `Syntec Group` website -> dropdown `Syntec Group`
+     - `Syntec International` website -> dropdown `International`
+     - all other websites -> dropdown `Ireland`
+  4) Persist updated values in local storage keys:
+     - `syntec_menu_business`
+     - `syntec_menu_website`
+     - and keep `syntec_business` aligned via dropdown state.
+
+- Files implementing this rule:
+  - `src/components/menus/MegaMenu.jsx`
+  - `src/components/layout/Header.jsx`
+
+- Regression warning:
+  - Do not set context from the currently hovered/open mega menu alone.
+  - Context must follow the clicked target’s resolved `L0` destination.
+    - `products.button.view_product`
+    - `menu.about_us`
+    - `admin.products.save`
+
+- Implementation workflow when resumed:
+  1) Inventory all current visible UI strings per page.
+  2) Assign stable `label_key` for each string.
+  3) Seed English rows first.
+  4) Add FR/IT rows.
+  5) Replace component literals with lookup helper.
+  6) Verify fallback behavior per page.
+
+- Priority note:
+  - This contract is agreed but intentionally deferred until higher-priority menu/runtime issues are complete.

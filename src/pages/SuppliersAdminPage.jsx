@@ -325,8 +325,29 @@ export default function SuppliersAdminPage() {
               <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">
                 Supplier Fields
               </h3>
+              <div className="mb-3 inline-grid grid-cols-2 gap-3 text-sm">
+                {orderedFormEntries
+                  .filter(([k]) => {
+                    const kk = String(k).toLowerCase();
+                    return kk === "active" || kk === "deleted";
+                  })
+                  .map(([k, v]) => (
+                    <label key={k} className="flex flex-col gap-1">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">{k}</span>
+                      <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
+                        <input type="checkbox" checked={String(v ?? "N").toUpperCase() === "Y"} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.checked ? "Y" : "N" }))} />
+                        <span>{String(v ?? "N").toUpperCase() === "Y" ? "Y" : "N"}</span>
+                      </label>
+                    </label>
+                  ))}
+              </div>
               <div className="grid grid-cols-1 gap-2 md:grid-cols-2 text-sm">
-                {orderedFormEntries.map(([k, v]) => (
+                {orderedFormEntries
+                  .filter(([k]) => {
+                    const kk = String(k).toLowerCase();
+                    return kk !== "active" && kk !== "deleted";
+                  })
+                  .map(([k, v]) => (
                   <label key={k} className="flex flex-col gap-1">
                     <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">{k}</span>
                     {isYnField(k, v) ? (

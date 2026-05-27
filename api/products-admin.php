@@ -49,6 +49,7 @@ try {
                                     s.active AS supplier_active,
                                     s.deleted AS supplier_deleted,
                                     s.supplier_name AS supplier_name_join,
+                                    s.class_colour AS supplier_class_colour,
                                     s.supplier_logo_small,
                                     s.supplier_logo_large
                              FROM syntec_products p

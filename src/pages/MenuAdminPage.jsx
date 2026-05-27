@@ -113,6 +113,8 @@ export default function MenuAdminPage() {
   const [form, setForm] = useState(emptyForm);
   const [isNew, setIsNew] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [previewContext, setPreviewContext] = useState("Ireland");
+  const [highlightMenuId, setHighlightMenuId] = useState("");
 
   const load = async () => {
     const data = await fetchMenuAdmin();
@@ -124,6 +126,18 @@ export default function MenuAdminPage() {
   }, []);
 
   const tree = useMemo(() => buildTree(items), [items]);
+  const topLevelPreview = useMemo(() => {
+    const isInContext = (x) => {
+      const w = String(x.website || "").trim();
+      const b = String(x.business || "").trim();
+      if (previewContext === "Group") return w === "Syntec Group";
+      if (previewContext === "International") return w === "Syntec International" || b === "International";
+      return b === "Ireland" || w === "Syntec Scientific" || w === "SyS Laboratories";
+    };
+    return items
+      .filter((x) => !x.parent_id && (x.sub_menu_level_id || "L0") === "L0" && isInContext(x))
+      .sort((a, b) => String(a.menu_id || "").localeCompare(String(b.menu_id || "")));
+  }, [items, previewContext]);
   const usedIcons = useMemo(() => {
     const vals = Array.from(new Set(items.map((x) => (x.icon_class || "").trim()).filter(Boolean)));
     vals.sort((a, b) => a.localeCompare(b));
@@ -135,6 +149,7 @@ export default function MenuAdminPage() {
     setSelected(node);
     const parent = items.find((x) => x.id === node.parent_id);
     setForm({ ...emptyForm, ...node, parent_menu_id: parent?.menu_id || "" });
+    setHighlightMenuId(String(node.menu_id || ""));
   };
 
   const newChild = async () => {
@@ -227,6 +242,29 @@ export default function MenuAdminPage() {
         <a className="rounded-lg border border-white/45 bg-[#4E8FD8] px-3 py-1 text-sm font-medium !text-white visited:!text-white transition hover:bg-[#3F82CE]" href="/admin/languages">Languages</a>
       </div>
 
+      <section className="mb-4 rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-[#2c4868]">Menu Preview</h3>
+          <select className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm" value={previewContext} onChange={(e) => setPreviewContext(e.target.value)}>
+            <option value="Group">Group</option>
+            <option value="Ireland">Ireland</option>
+            <option value="International">International</option>
+          </select>
+        </div>
+        <div className="flex gap-2 overflow-x-auto px-4 py-3">
+          {topLevelPreview.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => onSelect(r)}
+              className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold ${selected?.id === r.id ? "border-blue-400 bg-blue-100 text-blue-900" : "border-slate-300 bg-white text-slate-800"}`}
+            >
+              <span className="font-semibold">{r.menu_id}</span> - {r.sub_menu_name || r.menu_name}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.35fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
           <div className="mb-2 flex flex-wrap gap-2">
@@ -238,7 +276,9 @@ export default function MenuAdminPage() {
           </div>
           <ul className="max-h-[72vh] space-y-1 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-1.5 pr-1">
             {tree.map((n) => (
-              <TreeNode key={n.id} node={n} selectedId={selected?.id || null} onSelect={onSelect} onDropMove={onDropMove} />
+              <li key={n.id} className={highlightMenuId && String(n.menu_id || "").startsWith(highlightMenuId) ? "rounded bg-yellow-100/70 ring-1 ring-yellow-400" : ""}>
+                <TreeNode node={n} selectedId={selected?.id || null} onSelect={onSelect} onDropMove={onDropMove} />
+              </li>
             ))}
           </ul>
         </section>

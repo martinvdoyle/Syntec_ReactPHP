@@ -5,8 +5,10 @@ import * as TablerIcons from "@tabler/icons-react";
 import { createProduct, deleteProduct, fetchProductsAdmin, updateProduct } from "../api/productsAdmin";
 import { fetchSuppliersAdmin } from "../api/suppliersAdmin";
 import { fetchLanguages } from "../api/languagesAdmin";
+import { fetchTableAdmin } from "../api/tableAdmin";
 import { API_BASE_URL } from "../api/config";
 import SaveSuccessDialog from "../components/admin/SaveSuccessDialog";
+import DrawerFrame from "../components/products/DrawerFrame";
 import "../styles/legacy-content.css";
 
 const empty = {
@@ -28,6 +30,9 @@ export default function ProductsAdminPage() {
   const [languageOptions, setLanguageOptions] = useState([]);
   const [items, setItems] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [disciplineOptions, setDisciplineOptions] = useState([]);
+  const [productGroupOptions, setProductGroupOptions] = useState([]);
+  const [productTypeOptions, setProductTypeOptions] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [form, setForm] = useState(empty);
   const [isNew, setIsNew] = useState(false);
@@ -39,6 +44,7 @@ export default function ProductsAdminPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState("");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [previewVideoOpen, setPreviewVideoOpen] = useState(false);
   const listRef = useRef(null);
 
   const load = async () => {
@@ -76,6 +82,23 @@ export default function ProductsAdminPage() {
       .then((payload) => setSuppliers(Array.isArray(payload?.items) ? payload.items : []))
       .catch(() => setSuppliers([]));
   }, []);
+  useEffect(() => {
+    Promise.all([
+      fetchTableAdmin("syntec_discipline", lang),
+      fetchTableAdmin("syntec_product_group", lang),
+      fetchTableAdmin("syntec_product_type", lang),
+    ])
+      .then(([d, g, t]) => {
+        setDisciplineOptions(Array.isArray(d?.items) ? d.items : []);
+        setProductGroupOptions(Array.isArray(g?.items) ? g.items : []);
+        setProductTypeOptions(Array.isArray(t?.items) ? t.items : []);
+      })
+      .catch(() => {
+        setDisciplineOptions([]);
+        setProductGroupOptions([]);
+        setProductTypeOptions([]);
+      });
+  }, [lang]);
 
   const rowKey = (x) => x?.product_id ?? "";
   const selected = useMemo(() => items.find((x) => rowKey(x) === selectedId) || null, [items, selectedId]);
@@ -185,7 +208,7 @@ export default function ProductsAdminPage() {
   };
   const previewHtml = useMemo(() => {
     const raw = form.about_1 || "";
-    if (!raw) return "<p class='text-slate-400'>No long description</p>";
+    if (!raw) return "";
     let decoded = raw;
     if (raw.includes("&lt;") || raw.includes("&gt;") || raw.includes("&amp;")) {
       const t = document.createElement("textarea");
@@ -206,7 +229,19 @@ export default function ProductsAdminPage() {
       span.innerHTML = svg;
       el.replaceWith(span);
     });
+    Array.from(doc.querySelectorAll(".panel")).forEach((panel) => {
+      const title = (panel.querySelector(".panel-title a, .panel-title")?.textContent || "").toLowerCase();
+      if (title.includes("video")) panel.remove();
+    });
+    doc.querySelectorAll("video").forEach((v) => v.remove());
     return doc.body.innerHTML;
+  }, [form.about_1]);
+  const previewMedia = useMemo(() => {
+    const raw = String(form.about_1 || "");
+    const mp4 = raw.match(/(?:#WORKSPACE_FILES#assets\/|\/assets\/)[^"'\s>]+\.mp4/i)?.[0] || "";
+    const jpg = raw.match(/(?:#WORKSPACE_FILES#assets\/|\/assets\/)[^"'\s>]+\.jpg/i)?.[0] || "";
+    const norm = (v) => v ? v.replace(/^#WORKSPACE_FILES#assets\//i, "/assets/") : "";
+    return { mp4: norm(mp4), poster: norm(jpg) };
   }, [form.about_1]);
   const assetBaseUrl = useMemo(() => API_BASE_URL.replace(/\/api\/?$/, ""), []);
   const productImageUrl = useMemo(() => {
@@ -225,6 +260,29 @@ export default function ProductsAdminPage() {
 
     return `${assetBaseUrl}/${normalized}`;
   }, [assetBaseUrl, form.product_image_display, form.product_image_1, form.product_image_large]);
+  const previewSupplierHoverColor = useMemo(() => {
+    const sid = String(form.supplier_id || "").trim();
+    const fromSupplier = suppliers.find((s) => String(s.supplier_id || "").trim() === sid)?.class_colour;
+    return String(fromSupplier || form.class_colour || "").trim();
+  }, [suppliers, form.supplier_id, form.class_colour]);
+  const hasPreviewRecord = useMemo(
+    () => Boolean(String(form.product_id || "").trim() || String(form.product_name || "").trim()),
+    [form.product_id, form.product_name]
+  );
+  const previewSupplierLogoUrl = useMemo(() => {
+    const rawLogo = String(form.supplier_logo_small || form.supplier_logo_large || "").trim();
+    if (!rawLogo) return "";
+    if (rawLogo.startsWith("http")) return rawLogo;
+    const raw = rawLogo.replace(/^\/+/, "");
+    const normalized = raw.startsWith("assets/")
+      ? raw
+      : raw.startsWith("images/")
+        ? `assets/${raw}`
+        : raw.startsWith("Scientific/suppliers/")
+          ? `assets/images/${raw}`
+          : `assets/images/Scientific/suppliers/${raw}`;
+    return `${assetBaseUrl}/${normalized}`;
+  }, [assetBaseUrl, form.supplier_logo_small, form.supplier_logo_large]);
   const isHybridColumn = (key) => {
     const k = String(key || "").toLowerCase();
     return k === "id" || k.endsWith("_flag") || k === "slug" || k === "created_at" || k === "updated_at" || k === "supplier_name_lookup";
@@ -257,7 +315,23 @@ export default function ProductsAdminPage() {
   const additionalColumns = useMemo(() => {
     const source = selected ? Object.keys(selected) : Object.keys(form || {});
     const excluded = new Set(["supplier_active", "supplier_deleted", "supplier_name_join", "supplier_name"]);
-    return source.filter((k) => !isHybridColumn(k) && !renderedMainFields.has(k) && !excluded.has(String(k).toLowerCase()));
+    const redundantText = new Set([
+      "discipline",
+      "product_group",
+      "product_type",
+      "product_group_type_alt",
+      "discipline_id",
+      "product_group_id",
+      "product_type_id",
+      "product_group_type_alt_id",
+    ]);
+    return source.filter(
+      (k) =>
+        !isHybridColumn(k) &&
+        !renderedMainFields.has(k) &&
+        !excluded.has(String(k).toLowerCase()) &&
+        !redundantText.has(String(k).toLowerCase())
+    );
   }, [selected, form, renderedMainFields]);
 
   const save = async () => {
@@ -265,6 +339,23 @@ export default function ProductsAdminPage() {
     else await updateProduct(form, lang);
     await load();
     setShowSaveDialog(true);
+  };
+  const togglePreviewAccordion = (event) => {
+    const source = event.target instanceof Element ? event.target : event.target?.parentElement;
+    if (!source) return;
+    const trigger = source.closest("[data-toggle='collapse'], .panel-title a, .panel-heading, .panel-title");
+    if (!trigger) return;
+    event.preventDefault();
+    const panel = trigger.closest(".panel");
+    const target = panel?.querySelector(".panel-collapse");
+    if (!target) return;
+    const isOpen = target.classList.contains("show") || target.classList.contains("in");
+    target.classList.toggle("show", !isOpen);
+    target.classList.toggle("in", !isOpen);
+    target.style.display = !isOpen ? "block" : "none";
+    const clickable = panel.querySelector("[data-toggle='collapse'], .panel-title a") || trigger;
+    clickable.classList.toggle("collapsed", isOpen);
+    clickable.setAttribute("aria-expanded", String(!isOpen));
   };
 
   const remove = async () => {
@@ -438,7 +529,7 @@ export default function ProductsAdminPage() {
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Flags</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="inline-grid grid-cols-2 gap-3 text-sm">
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">ACTIVE</span>
                 <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={form.active === "Y"} onChange={(e) => f("active", e.target.checked ? "Y" : "N")} /><span>{form.active === "Y" ? "Y" : "N"}</span></label>
@@ -489,6 +580,66 @@ export default function ProductsAdminPage() {
               <label className="col-span-2 flex flex-col gap-1">
                 <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">PRODUCT_LINK</span>
                 <input className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" value={form.product_link ?? ""} onChange={(e) => f("product_link", e.target.value)} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">DISCIPLINE_ID</span>
+                <select
+                  className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                  value={form.discipline_id ?? ""}
+                  onChange={(e) => f("discipline_id", e.target.value)}
+                >
+                  <option value="">Select discipline</option>
+                  {disciplineOptions.map((r) => (
+                    <option key={r.discipline_id} value={r.discipline_id}>
+                      {r.discipline_id} - {r.discipline_name || "(no name)"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">PRODUCT_GROUP_ID</span>
+                <select
+                  className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                  value={form.product_group_id ?? ""}
+                  onChange={(e) => f("product_group_id", e.target.value)}
+                >
+                  <option value="">Select product group</option>
+                  {productGroupOptions.map((r) => (
+                    <option key={r.product_group_id} value={r.product_group_id}>
+                      {r.product_group_id} - {r.product_group_name || "(no name)"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">PRODUCT_TYPE_ID</span>
+                <select
+                  className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                  value={form.product_type_id ?? ""}
+                  onChange={(e) => f("product_type_id", e.target.value)}
+                >
+                  <option value="">Select product type</option>
+                  {productTypeOptions.map((r) => (
+                    <option key={r.product_type_id} value={r.product_type_id}>
+                      {r.product_type_id} - {r.product_type_name || "(no name)"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">PRODUCT_GROUP_TYPE_ALT_ID</span>
+                <select
+                  className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                  value={form.product_group_type_alt_id ?? ""}
+                  onChange={(e) => f("product_group_type_alt_id", e.target.value)}
+                >
+                  <option value="">Select alt product group</option>
+                  {productGroupOptions.map((r) => (
+                    <option key={r.product_group_id} value={r.product_group_id}>
+                      {r.product_group_id} - {r.product_group_name || "(no name)"}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
           </div>
@@ -570,26 +721,56 @@ export default function ProductsAdminPage() {
               {previewOn ? "Hide HTML" : "Show HTML"}
             </button>
           </div>
-          <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <div className="text-xs text-slate-500">product_name</div>
-            <div className="font-semibold">{form.product_name || "-"}</div>
-            <div className="mt-2 text-xs text-slate-500">product_id</div>
-            <div className="font-mono text-sm">{form.product_id || "-"}</div>
-          </div>
-          <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <div className="mb-2 text-xs text-slate-500">Product image</div>
-            {productImageUrl ? (
-              <img src={productImageUrl} alt={form.product_name || "Product image"} className="h-32 w-auto max-w-full object-contain" />
-            ) : (
-              <div className="text-sm text-slate-500">No product image path.</div>
-            )}
-          </div>
           {previewOn ? (
-            <div className="max-h-[72vh] overflow-auto rounded-xl border border-slate-200 p-3">
-              <div
-                className="legacy-products-content prose prose-sm max-w-none [&_table]:block [&_table]:overflow-x-auto"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
-              />
+            <div className="max-h-[calc(100vh-120px)] overflow-auto rounded-xl border border-slate-200 p-3">
+              {hasPreviewRecord ? (
+                <div className="mx-auto w-[760px] max-w-[760px]">
+                <DrawerFrame
+                  mode="preview"
+                  name={form.product_name || "-"}
+                  supplier={form.supplier_name || form.supplier_id || "-"}
+                  supplierLogoUrl={previewSupplierLogoUrl}
+                  productLink={form.product_link || ""}
+                  hoverColor={previewSupplierHoverColor}
+                  imageUrl={productImageUrl}
+                  discipline={form.discipline || "(no discipline)"}
+                  group={form.product_group || "(no group)"}
+                >
+                    <div
+                      className="legacy-products-content prose prose-sm max-w-none [&_table]:block [&_table]:overflow-x-auto"
+                      onClickCapture={togglePreviewAccordion}
+                      dangerouslySetInnerHTML={{ __html: previewHtml }}
+                    />
+                    {previewMedia.mp4 ? (
+                      <div className="rounded border border-slate-300 bg-[#dcdcdc]">
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between px-4 py-3 text-left text-base font-extrabold text-slate-900"
+                          onClick={() => setPreviewVideoOpen((v) => !v)}
+                          aria-expanded={previewVideoOpen}
+                        >
+                          <span className="flex items-center gap-2">
+                            <LucideIcons.Video className="h-4 w-4 text-cyan-700" />
+                            {form.product_name || "Product"} Video
+                          </span>
+                          <LucideIcons.ChevronDown className={`h-4 w-4 text-slate-700 transition-transform ${previewVideoOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {previewVideoOpen ? (
+                          <div className="border-t border-slate-300 bg-white p-3">
+                            <video controls poster={previewMedia.poster || undefined} className="mx-auto block h-auto w-full max-w-[760px] bg-black">
+                              <source src={previewMedia.mp4} type="video/mp4" />
+                            </video>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </DrawerFrame>
+                </div>
+              ) : (
+                <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                  Select a product to preview drawer content.
+                </div>
+              )}
             </div>
           ) : (
             <div className="rounded-xl border border-slate-200 p-3 text-sm text-slate-500">Preview hidden.</div>
