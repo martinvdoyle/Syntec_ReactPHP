@@ -200,6 +200,11 @@ export default function MegaMenu({ items = [], onMenuClick }) {
   const [blobStyle, setBlobStyle] = useState({ left: 0, width: 176 });
 
   useEffect(() => {
+    setSelectedL0Id(null);
+    setHoveredTabId(null);
+  }, [items]);
+
+  useEffect(() => {
     if (!blobTargetId) return;
     const node = itemRefs.current.get(blobTargetId);
     if (!node) return;
@@ -214,15 +219,20 @@ export default function MegaMenu({ items = [], onMenuClick }) {
         <div className="mega-concept-b-rail relative h-full bg-white px-[6px]">
           {blobTargetId ? (
             <span
-              className="mega-concept-b-blob pointer-events-none absolute top-0 z-[1] h-[78px] bg-[var(--syntec-blue)] transition-all duration-300 ease-out"
+              className="mega-concept-b-blob pointer-events-none absolute top-[6px] z-[1] h-[62px] rounded-[34px] bg-[var(--syntec-blue)] shadow-[0_10px_20px_rgba(36,96,167,0.24)] transition-opacity duration-200"
               style={{
                 left: `${blobStyle.left + 10}px`,
                 width: `${blobStyle.width}px`,
-                opacity: hoveredTabId ? 1 : 0,
+                opacity: hoveredTabId && hoveredTabId !== selectedL0Id ? 1 : 0,
               }}
             />
           ) : null}
-          <ul className="relative z-[2] m-0 flex h-full list-none items-stretch justify-center gap-[8px] p-0">
+          <ul
+            className="relative z-[2] m-0 flex h-full list-none items-stretch justify-center gap-[8px] p-0"
+            onMouseLeave={() => {
+              setHoveredTabId(null);
+            }}
+          >
           {l0Items.map((item) => {
             const mega = isMega(item);
             const active = hoveredTabId === item.id;
@@ -234,7 +244,7 @@ export default function MegaMenu({ items = [], onMenuClick }) {
                   if (el) itemRefs.current.set(item.id, el);
                   else itemRefs.current.delete(item.id);
                 }}
-                className={`mega-concept-b-pill relative inline-flex h-[78px] min-w-[120px] shrink-0 items-center justify-center whitespace-nowrap rounded-[36px] px-[11px] text-[16px] font-bold tracking-[0.005em] transition-all duration-200 ${active ? "mega-concept-b-pill-hovered" : ""} ${selected ? "mega-concept-b-pill-active bg-[var(--syntec-blue)] text-white z-[3]" : "bg-transparent text-[#2b4465]"}`}
+                className={`mega-concept-b-pill relative inline-flex h-[78px] min-w-[120px] shrink-0 items-center justify-center whitespace-nowrap rounded-[36px] px-[11px] text-[16px] font-bold tracking-[0.005em] transition-colors duration-200 ${active ? "mega-concept-b-pill-hovered" : ""} ${selected ? "mega-concept-b-pill-active bg-[var(--syntec-blue)] text-white z-[3]" : "bg-transparent text-[#2b4465]"}`}
                 onMouseEnter={() => {
                   setHoveredTabId(item.id);
                   if (mega) {
@@ -248,13 +258,16 @@ export default function MegaMenu({ items = [], onMenuClick }) {
                     setActiveL0Id(null);
                   }
                 }}
-                onClick={() => setSelectedL0Id(item.id)}
+                onClick={() => {
+                  setSelectedL0Id(item.id);
+                  setHoveredTabId(null);
+                }}
                 style={{}}
               >
                 <Link
                   to={item.url || "#"}
                   onClick={(e) => onMenuClick?.(item, e)}
-                  className={`block whitespace-nowrap text-center leading-tight ${active && !selected ? "text-[var(--syntec-blue)]" : ""}`}
+                  className={`block whitespace-nowrap text-center leading-tight ${selected ? "text-white" : active ? "text-[var(--syntec-blue)]" : ""}`}
                 >
                   {rowTitle(item)}
                 </Link>
