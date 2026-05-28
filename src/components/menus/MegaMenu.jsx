@@ -86,6 +86,9 @@ function StandardCascade({ items = [], onClose }) {
 
   return (
     <div ref={wrapRef} className="absolute left-0 top-full z-50 flex items-start" onMouseLeave={onClose}>
+      <div className="absolute left-0 top-0 h-[2px] w-full overflow-hidden">
+        <div className="h-full w-full bg-lime-500" />
+      </div>
       <ul className="min-w-[260px] self-start border border-slate-200 bg-[#f3f5f7] text-slate-700 shadow-lg">
         {items.map((c) => (
           <li
@@ -158,6 +161,9 @@ function StandardCascade({ items = [], onClose }) {
           ))}
         </ul>
       ) : null}
+      <div className="absolute left-0 top-0 h-[2px] w-full overflow-hidden">
+        <div className="h-full w-full bg-lime-500" />
+      </div>
     </div>
   );
 }
@@ -216,7 +222,7 @@ export default function MegaMenu({ items = [], onMenuClick }) {
               }}
             />
           ) : null}
-          <ul className="relative z-[2] m-0 flex h-full list-none items-stretch gap-[8px] p-0">
+          <ul className="relative z-[2] m-0 flex h-full list-none items-stretch justify-center gap-[8px] p-0">
           {l0Items.map((item) => {
             const mega = isMega(item);
             const active = hoveredTabId === item.id;
@@ -228,7 +234,7 @@ export default function MegaMenu({ items = [], onMenuClick }) {
                   if (el) itemRefs.current.set(item.id, el);
                   else itemRefs.current.delete(item.id);
                 }}
-                className={`mega-concept-b-pill relative inline-flex h-[78px] min-w-fit shrink-0 items-center justify-center whitespace-nowrap rounded-[36px] px-[16px] text-[16px] font-bold tracking-[0.005em] transition-all duration-200 ${active ? "mega-concept-b-pill-hovered" : ""} ${selected ? "mega-concept-b-pill-active bg-[var(--syntec-blue)] text-white z-[3]" : "bg-transparent text-[#2b4465]"}`}
+                className={`mega-concept-b-pill relative inline-flex h-[78px] min-w-[120px] shrink-0 items-center justify-center whitespace-nowrap rounded-[36px] px-[11px] text-[16px] font-bold tracking-[0.005em] transition-all duration-200 ${active ? "mega-concept-b-pill-hovered" : ""} ${selected ? "mega-concept-b-pill-active bg-[var(--syntec-blue)] text-white z-[3]" : "bg-transparent text-[#2b4465]"}`}
                 onMouseEnter={() => {
                   setHoveredTabId(item.id);
                   if (mega) {
@@ -286,6 +292,9 @@ export default function MegaMenu({ items = [], onMenuClick }) {
               </div>
             ) : (
               <div className="relative border border-slate-200 bg-[#f3f5f7] shadow-lg">
+                <div className="absolute left-0 top-0 h-[2px] w-full overflow-hidden">
+                  <div className="h-full w-full bg-lime-500" />
+                </div>
                 <div className="grid grid-cols-4">
                   {[1, 2, 3, 4].map((colNo) => (
                     <div key={colNo} className="border-r border-slate-300 p-4 last:border-r-0">
