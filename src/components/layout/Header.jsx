@@ -18,16 +18,23 @@ export default function Header() {
   const [isSticky, setIsSticky] = useState(false);
   const [languageOptions, setLanguageOptions] = useState([]);
   const [lang, setLang] = useState(() => localStorage.getItem("syntec_lang") || "en");
-  const [website, setWebsite] = useState(() => localStorage.getItem("syntec_website") || "Syntec Scientific");
+  const [menuContext, setMenuContext] = useState(() => localStorage.getItem("syntec_menu_context") || "Ireland");
 
-  const loadMenu = (site) => {
-    fetchMenu({ business: "Ireland", website: site }).then((items) => {
+  const contextToParams = (ctx) => {
+    if (ctx === "Group") return { business: "Ireland", website: "Syntec Group" };
+    if (ctx === "International") return { business: "International", website: "Syntec International" };
+    return { business: "Ireland", website: "Syntec Scientific" };
+  };
+
+  const loadMenu = (ctx) => {
+    const params = contextToParams(ctx);
+    fetchMenu(params).then((items) => {
       if (Array.isArray(items) && items.length > 0) setMenuItems(items);
     });
   };
 
   useEffect(() => {
-    loadMenu(website);
+    loadMenu(menuContext);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -68,14 +75,11 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const rootItems = useMemo(
-    () => menuItems.filter((i) => i.parentId == null),
-    [menuItems]
-  );
-  const websiteOptions = useMemo(() => {
-    const values = Array.from(new Set(menuItems.map((x) => String(x.website || "").trim()).filter(Boolean)));
-    return values.length ? values : ["Syntec Group", "Syntec Scientific", "Syntec International", "SyS Laboratories"];
+  const rootItems = useMemo(() => {
+    const l0 = menuItems.filter((i) => (i.menuLevel || "") === "L0");
+    return l0.length ? l0 : menuItems.filter((i) => i.parentId == null);
   }, [menuItems]);
+  const menuContextOptions = ["Group", "Ireland", "International"];
 
   return (
     <header className="sticky top-0 z-[80] border-b border-slate-200 bg-white shadow-sm">
@@ -113,15 +117,15 @@ export default function Header() {
               <div className="hidden items-center gap-2 whitespace-nowrap text-sm text-slate-600 lg:flex">
                 <select
                   className="w-[138px] cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
-                  value={website}
+                  value={menuContext}
                   onChange={(e) => {
                     const next = e.target.value;
-                    setWebsite(next);
-                    localStorage.setItem("syntec_website", next);
+                    setMenuContext(next);
+                    localStorage.setItem("syntec_menu_context", next);
                     loadMenu(next);
                   }}
                 >
-                  {websiteOptions.map((w) => (
+                  {menuContextOptions.map((w) => (
                     <option key={w} value={w}>{w}</option>
                   ))}
                 </select>

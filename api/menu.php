@@ -40,7 +40,7 @@ SQL;
         $sql .= " AND COALESCE(enabled, 'Y') = 'Y'";
     }
 
-    $sql .= ' ORDER BY COALESCE(menu_order_clone, menu_order, menu_id_order, 0) ASC, id ASC';
+    $sql .= ' ORDER BY menu_id_order ASC, menu_name ASC, sub_menu_name ASC, sub_menu_level_id ASC, menu_order ASC, id ASC';
 
     $stmt = db()->prepare($sql);
     $stmt->execute(['business' => $business, 'website' => $website]);
