@@ -162,7 +162,7 @@ function StandardCascade({ items = [], onClose }) {
   );
 }
 
-export default function MegaMenu({ items = [] }) {
+export default function MegaMenu({ items = [], onMenuClick }) {
   const l0Items = useMemo(() => items.filter((i) => i.menuLevel === "L0"), [items]);
   const [hoveredTabId, setHoveredTabId] = useState(null);
   const [activeL0Id, setActiveL0Id] = useState(null);
@@ -245,7 +245,13 @@ export default function MegaMenu({ items = [] }) {
                 onClick={() => setSelectedL0Id(item.id)}
                 style={{}}
               >
-                <Link to={item.url || "#"} className={`block whitespace-nowrap text-center leading-tight ${active && !selected ? "text-[var(--syntec-blue)]" : ""}`}>{rowTitle(item)}</Link>
+                <Link
+                  to={item.url || "#"}
+                  onClick={(e) => onMenuClick?.(item, e)}
+                  className={`block whitespace-nowrap text-center leading-tight ${active && !selected ? "text-[var(--syntec-blue)]" : ""}`}
+                >
+                  {rowTitle(item)}
+                </Link>
                 {!mega && activeStdId === item.id && item.children?.length ? (
                   <StandardCascade items={item.children} onClose={() => setActiveStdId(null)} />
                 ) : null}

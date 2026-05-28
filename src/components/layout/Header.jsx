@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { fetchMenu } from "../../api/menu";
 import { fetchLanguages } from "../../api/languagesAdmin";
 import MegaMenu from "../menus/MegaMenu";
@@ -13,12 +13,14 @@ const menuSeed = [
 ];
 
 export default function Header() {
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuItems, setMenuItems] = useState(menuSeed);
   const [isSticky, setIsSticky] = useState(false);
   const [languageOptions, setLanguageOptions] = useState([]);
   const [lang, setLang] = useState(() => localStorage.getItem("syntec_lang") || "en");
   const [menuContext, setMenuContext] = useState(() => localStorage.getItem("syntec_menu_context") || "Ireland");
+  const [langOpen, setLangOpen] = useState(false);
 
   const contextToParams = (ctx) => {
     if (ctx === "Group") return { business: "Ireland", website: "Syntec Group" };
@@ -80,6 +82,41 @@ export default function Header() {
     return l0.length ? l0 : menuItems.filter((i) => i.parentId == null);
   }, [menuItems]);
   const menuContextOptions = ["Group", "Ireland", "International"];
+  const contextLogo = useMemo(() => {
+    if (menuContext === "Group") return "/assets/images/Logos/Syntec_Group_Logo_Menu.png";
+    if (menuContext === "International") return "/assets/images/Logos/Syntec_International_Logo_Menu.png";
+    if (menuContext === "Ireland") return "/assets/images/Logos/Syntec_Scientific_Logo_Menu.png";
+    return "/assets/images/Logos/Syntec_Group_Logo_Menu.png";
+  }, [menuContext]);
+
+  useEffect(() => {
+    const onDocClick = () => setLangOpen(false);
+    if (langOpen) document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [langOpen]);
+
+  const handleMenuClick = (item, e) => {
+    const website = String(item?.websiteSet || item?.website || "").trim();
+    const business = String(item?.businessSet || item?.business || "").trim();
+    const title = String(item?.title || "").trim();
+
+    let nextContext = "Ireland";
+    if (website === "Syntec Group") nextContext = "Group";
+    else if (website === "Syntec International" || business === "International") nextContext = "International";
+    else nextContext = "Ireland";
+
+    e?.preventDefault?.();
+    setMenuContext(nextContext);
+    localStorage.setItem("syntec_menu_context", nextContext);
+    loadMenu(nextContext);
+
+    if (website === "Syntec Group" || title === "Syntec Group") navigate("/");
+    else if (website === "Syntec International" || title === "Syntec International") navigate("/international");
+    else if (title === "SyS Laboratories") navigate("/sys-laboratories");
+    else if (title === "Suppliers") navigate("/suppliers");
+    else if (title === "About Us" || title === "About") navigate("/about");
+    else navigate("/products");
+  };
 
   return (
     <header className="sticky top-0 z-[80] border-b border-slate-200 bg-white shadow-sm">
@@ -103,13 +140,13 @@ export default function Header() {
             <div className="syn-bnav-row grid h-[74px] grid-cols-1 items-stretch gap-0 lg:grid-cols-[180px_minmax(0,1fr)_170px]">
             <div className="syn-bnav-logo justify-self-start lg:w-[180px]">
               <Link to="/" className="relative z-50 inline-flex h-full items-center pl-2 pr-2">
-                <img src="/assets/images/Syntec_Group_Logo_Small.png" alt="Syntec" className="h-14 w-auto" />
+                <img src={contextLogo} alt="Syntec" className="h-14 w-auto" />
               </Link>
             </div>
 
             <div className="relative z-50 hidden min-w-0 lg:block">
               <div className="mx-auto w-full">
-                <MegaMenu items={rootItems} />
+                <MegaMenu items={rootItems} onMenuClick={handleMenuClick} />
               </div>
             </div>
 
@@ -129,27 +166,45 @@ export default function Header() {
                     <option key={w} value={w}>{w}</option>
                   ))}
                 </select>
-                <select
-                  className="w-[92px] cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
-                  value={lang}
-                  onChange={(e) => {
-                    const nextLang = e.target.value;
-                    setLang(nextLang);
-                    localStorage.setItem("syntec_lang", nextLang);
-                    window.dispatchEvent(new CustomEvent("syntec-language-change", { detail: nextLang }));
-                  }}
-                >
-                  {languageOptions.map((opt) => (
-                    <option key={opt.code} value={opt.code}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <img
-                  src={languageOptions.find((x) => x.code === lang)?.flag || "/assets/images/flags/gb.svg"}
-                  alt={lang}
-                  className="h-4 w-6 rounded-sm border border-slate-300"
-                />
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLangOpen((v) => !v);
+                    }}
+                  >
+                    <img
+                      src={languageOptions.find((x) => x.code === lang)?.flag || "/assets/images/flags/gb.svg"}
+                      alt={lang}
+                      className="h-5 w-5 rounded-full object-cover"
+                    />
+                  </button>
+                  {langOpen ? (
+                    <div
+                      className="absolute left-[calc(100%+8px)] top-0 z-[120] min-w-[170px] rounded-md border border-slate-200 bg-white py-2 shadow-lg"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {languageOptions.map((opt) => (
+                        <button
+                          key={opt.code}
+                          type="button"
+                          className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${opt.code === lang ? "bg-slate-100 font-semibold text-slate-900" : "text-slate-700 hover:bg-slate-50"}`}
+                          onClick={() => {
+                            setLang(opt.code);
+                            localStorage.setItem("syntec_lang", opt.code);
+                            window.dispatchEvent(new CustomEvent("syntec-language-change", { detail: opt.code }));
+                            setLangOpen(false);
+                          }}
+                        >
+                          <img src={opt.flag || "/assets/images/flags/gb.svg"} alt={opt.code} className="h-5 w-5 rounded-full object-cover" />
+                          <span>{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </div>
               <button
                 type="button"
