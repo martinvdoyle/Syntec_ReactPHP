@@ -96,9 +96,28 @@ export default function Header() {
   }, [langOpen]);
 
   const handleMenuClick = (item, e) => {
-    const website = String(item?.websiteSet || item?.website || "").trim();
-    const business = String(item?.businessSet || item?.business || "").trim();
+    const rawWebsiteSet = String(item?.websiteSet || "").trim();
+    const rawBusinessSet = String(item?.businessSet || "").trim();
+    const rawWebsite = String(item?.website || "").trim();
+    const rawBusiness = String(item?.business || "").trim();
     const title = String(item?.title || "").trim();
+
+    let website = rawWebsiteSet || rawWebsite;
+    let business = rawBusinessSet || rawBusiness;
+
+    // Legacy Group menu L0 rows can omit website_set/business_set; infer target context by L0 title.
+    if (!rawWebsiteSet && rawWebsite === "Syntec Group") {
+      if (title === "Syntec Scientific" || title === "SyS Laboratories") {
+        website = "Syntec Scientific";
+        business = "Ireland";
+      } else if (title === "Syntec International") {
+        website = "Syntec International";
+        business = "International";
+      } else if (title === "Syntec Group") {
+        website = "Syntec Group";
+        business = "Ireland";
+      }
+    }
 
     let nextContext = "Ireland";
     if (website === "Syntec Group") nextContext = "Group";
