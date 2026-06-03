@@ -609,7 +609,7 @@ export default function ProductsPage() {
                     <button
                       type="button"
                       aria-label="Hold to magnify image"
-                      className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
+                      className="absolute bottom-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
                       onPointerDown={handleMagnifyPointerDown(setCardMagnifyId, p.id)}
                       onPointerUp={handleMagnifyPointerUp(setCardMagnifyId)}
                       onPointerCancel={handleMagnifyPointerUp(setCardMagnifyId)}
@@ -712,7 +712,7 @@ export default function ProductsPage() {
                     <button
                       type="button"
                       aria-label="Hold to magnify image"
-                      className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
+                      className="absolute bottom-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
                       onPointerDown={handleMagnifyPointerDown(setMagnifyActive, true)}
                       onPointerUp={handleMagnifyPointerUp(setMagnifyActive, false)}
                       onPointerCancel={handleMagnifyPointerUp(setMagnifyActive, false)}
@@ -795,12 +795,38 @@ export default function ProductsPage() {
               className="absolute inset-x-0 z-[100] flex items-center justify-center bg-slate-900/35 p-6"
               style={{ top: productsPaneScrollTop, height: productsPaneClientHeight || undefined }}
             >
-              <div className="flex h-[min(calc(100%-3rem),900px)] w-full max-w-[min(1100px,calc(100%-3rem))] items-center justify-center overflow-hidden rounded-xl border-2 border-[#78BE20] bg-white p-[100px] shadow-2xl">
-                <img
-                  src={visibleProducts.find((p) => p.id === cardMagnifyId)?.image || products.find((p) => p.id === cardMagnifyId)?.image || ""}
-                  alt={visibleProducts.find((p) => p.id === cardMagnifyId)?.name || products.find((p) => p.id === cardMagnifyId)?.name || ""}
-                  className="block max-h-full max-w-full object-contain"
-                />
+              <div className="flex h-[min(calc(100%-3rem),900px)] w-full max-w-[min(1100px,calc(100%-3rem))] flex-col overflow-hidden rounded-xl border-2 border-[#78BE20] bg-white shadow-2xl">
+                {(() => {
+                  const magnifiedProduct = visibleProducts.find((p) => p.id === cardMagnifyId) || products.find((p) => p.id === cardMagnifyId) || null;
+                  const logoUrl = magnifiedProduct ? toSupplierLogoUrl(magnifiedProduct.supplierLogo) : "";
+                  if (!logoUrl) return null;
+                  return (
+                    <div className="flex items-center justify-center px-6 pt-6">
+                      <img src={logoUrl} alt={magnifiedProduct.supplier} className="h-10 w-auto max-w-[180px] object-contain" />
+                    </div>
+                  );
+                })()}
+                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-10 pb-8 pt-6">
+                  <img
+                    src={visibleProducts.find((p) => p.id === cardMagnifyId)?.image || products.find((p) => p.id === cardMagnifyId)?.image || ""}
+                    alt={visibleProducts.find((p) => p.id === cardMagnifyId)?.name || products.find((p) => p.id === cardMagnifyId)?.name || ""}
+                    className="block max-h-full max-w-full object-contain"
+                  />
+                </div>
+                {(() => {
+                  const magnifiedProduct = visibleProducts.find((p) => p.id === cardMagnifyId) || products.find((p) => p.id === cardMagnifyId) || null;
+                  if (!magnifiedProduct) return null;
+                  return (
+                    <div className="border-t border-slate-200 px-6 py-5 text-center">
+                      <div className="flex flex-wrap justify-center gap-2">
+                        <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{magnifiedProduct.discipline}</span>
+                        <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{magnifiedProduct.group}</span>
+                      </div>
+                      <h4 className="mt-3 text-xl font-black leading-tight text-[#173a61]">{magnifiedProduct.name}</h4>
+                      <p className="mt-2 text-base font-bold text-slate-900">{magnifiedProduct.supplier}</p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           ) : null}
@@ -809,8 +835,23 @@ export default function ProductsPage() {
               className="absolute inset-x-0 z-[110] flex items-center justify-center bg-slate-900/35 p-6"
               style={{ top: productsPaneScrollTop, height: productsPaneClientHeight || undefined }}
             >
-              <div className="flex h-[min(calc(100%-3rem),900px)] w-full max-w-[min(1100px,calc(100%-3rem))] items-center justify-center overflow-hidden rounded-xl border-2 border-[#78BE20] bg-white p-[100px] shadow-2xl">
-                <img src={activeProduct.image} alt={activeProduct.name} className="block max-h-full max-w-full object-contain" />
+              <div className="flex h-[min(calc(100%-3rem),900px)] w-full max-w-[min(1100px,calc(100%-3rem))] flex-col overflow-hidden rounded-xl border-2 border-[#78BE20] bg-white shadow-2xl">
+                {toSupplierLogoUrl(activeProduct.supplierLogo) ? (
+                  <div className="flex items-center justify-center px-6 pt-6">
+                    <img src={toSupplierLogoUrl(activeProduct.supplierLogo)} alt={activeProduct.supplier} className="h-10 w-auto max-w-[180px] object-contain" />
+                  </div>
+                ) : null}
+                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-10 pb-8 pt-6">
+                  <img src={activeProduct.image} alt={activeProduct.name} className="block max-h-full max-w-full object-contain" />
+                </div>
+                <div className="border-t border-slate-200 px-6 py-5 text-center">
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{activeProduct.discipline}</span>
+                    <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{activeProduct.group}</span>
+                  </div>
+                  <h4 className="mt-3 text-xl font-black leading-tight text-[#173a61]">{activeProduct.name}</h4>
+                  <p className="mt-2 text-base font-bold text-slate-900">{activeProduct.supplier}</p>
+                </div>
               </div>
             </div>
           ) : null}

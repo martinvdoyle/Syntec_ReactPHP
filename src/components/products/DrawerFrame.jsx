@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as LucideIcons from "lucide-react";
 
-function ProductImagePanel({ imageUrl, imageAlt, imageBackgroundColor }) {
+function ProductImagePanel({ imageUrl, imageAlt, imageBackgroundColor, name, supplier, supplierLogoUrl, discipline, group }) {
   const [magnifyActive, setMagnifyActive] = useState(false);
 
   useEffect(() => {
@@ -26,14 +26,14 @@ function ProductImagePanel({ imageUrl, imageAlt, imageBackgroundColor }) {
 
   return (
     <>
-      <div className="relative h-80 w-full overflow-hidden rounded border border-slate-200 p-3" style={{ backgroundColor: imageBackgroundColor }}>
+      <div className="relative flex h-80 w-full items-center justify-center overflow-hidden rounded border border-slate-200 p-3" style={{ backgroundColor: imageBackgroundColor }}>
         {imageUrl ? (
           <>
             <img src={imageUrl} alt={imageAlt} className="block max-h-full max-w-full object-contain" />
             <button
               type="button"
               aria-label="Hold to magnify image"
-              className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
+              className="absolute bottom-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
               onPointerDown={handlePointerDown}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
@@ -47,8 +47,23 @@ function ProductImagePanel({ imageUrl, imageAlt, imageBackgroundColor }) {
       </div>
       {imageUrl && magnifyActive ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/35 p-6">
-          <div className="flex h-[min(82vh,900px)] w-full max-w-[min(1100px,calc(100vw-3rem))] items-center justify-center overflow-hidden rounded-xl border border-slate-300 bg-white p-[100px] shadow-2xl">
-            <img src={imageUrl} alt={imageAlt} className="block max-h-full max-w-full object-contain" />
+          <div className="flex h-[min(82vh,900px)] w-full max-w-[min(1100px,calc(100vw-3rem))] flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl">
+            {supplierLogoUrl ? (
+              <div className="flex items-center justify-center px-6 pt-6">
+                <img src={supplierLogoUrl} alt={supplier} className="h-10 w-auto max-w-[180px] object-contain" />
+              </div>
+            ) : null}
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-10 pb-8 pt-6">
+              <img src={imageUrl} alt={imageAlt} className="block max-h-full max-w-full object-contain" />
+            </div>
+            <div className="border-t border-slate-200 px-6 py-5 text-center">
+              <div className="flex flex-wrap justify-center gap-2">
+                <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{discipline}</span>
+                <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{group}</span>
+              </div>
+              <h4 className="mt-3 text-xl font-black leading-tight text-[#173a61]">{name}</h4>
+              <p className="mt-2 text-base font-bold text-slate-900">{supplier}</p>
+            </div>
           </div>
         </div>
       ) : null}
@@ -74,7 +89,7 @@ export default function DrawerFrame({
   const hasProductLink = /^https?:\/\//i.test(String(productLink || "").trim());
   const body = (
     <div className="space-y-4 p-5">
-      <ProductImagePanel imageUrl={imageUrl} imageAlt={name} imageBackgroundColor={imageBackgroundColor} />
+      <ProductImagePanel imageUrl={imageUrl} imageAlt={name} imageBackgroundColor={imageBackgroundColor} name={name} supplier={supplier} supplierLogoUrl={supplierLogoUrl} discipline={discipline} group={group} />
       <div className="flex flex-wrap justify-center gap-2">
         <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{discipline}</span>
         <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{group}</span>

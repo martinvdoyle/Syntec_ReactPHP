@@ -21,6 +21,8 @@ export default function Header() {
   const [languageOptions, setLanguageOptions] = useState([]);
   const [lang, setLang] = useState(() => localStorage.getItem("syntec_lang") || "en");
   const [menuContext, setMenuContext] = useState(() => localStorage.getItem("syntec_menu_context") || "Ireland");
+  const [menuWebsite, setMenuWebsite] = useState(() => localStorage.getItem("syntec_menu_website") || "Syntec Scientific");
+  const [menuBusiness, setMenuBusiness] = useState(() => localStorage.getItem("syntec_menu_business") || "Ireland");
   const [langOpen, setLangOpen] = useState(false);
 
   const contextToParams = (ctx) => {
@@ -29,15 +31,15 @@ export default function Header() {
     return { business: "Ireland", website: "Syntec Scientific" };
   };
 
-  const loadMenu = (ctx) => {
-    const params = contextToParams(ctx);
+  const loadMenu = (ctxOrParams) => {
+    const params = typeof ctxOrParams === "string" ? contextToParams(ctxOrParams) : ctxOrParams;
     fetchMenu(params).then((items) => {
       if (Array.isArray(items) && items.length > 0) setMenuItems(items);
     });
   };
 
   useEffect(() => {
-    loadMenu(menuContext);
+    loadMenu({ business: menuBusiness, website: menuWebsite });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -84,11 +86,12 @@ export default function Header() {
   }, [menuItems]);
   const menuContextOptions = ["Group", "Ireland", "International"];
   const contextLogo = useMemo(() => {
-    if (menuContext === "Group") return "/assets/images/Logos/Syntec_Group_Logo_Menu.png";
-    if (menuContext === "International") return "/assets/images/Logos/Syntec_International_Logo_Menu.png";
-    if (menuContext === "Ireland") return "/assets/images/Logos/Syntec_Scientific_Logo_Menu.png";
+    if (menuWebsite === "Syntec Group") return "/assets/images/Logos/Syntec_Group_Logo_Menu.png";
+    if (menuWebsite === "Syntec International") return "/assets/images/Logos/Syntec_International_Logo_Menu.png";
+    if (menuWebsite === "SyS Laboratories") return "/assets/images/Logos/Syntec_SysLabs_Logo_Menu.png";
+    if (menuWebsite === "Syntec Scientific") return "/assets/images/Logos/Syntec_Scientific_Logo_Menu.png";
     return "/assets/images/Logos/Syntec_Group_Logo_Menu.png";
-  }, [menuContext]);
+  }, [menuWebsite]);
 
   useEffect(() => {
     const onDocClick = () => setLangOpen(false);
@@ -128,8 +131,12 @@ export default function Header() {
     setSelectedMenuItemId(item?.id ? Number(item.id) : null);
     localStorage.setItem("syntec_selected_menu_item_id", String(item?.id || ""));
     setMenuContext(nextContext);
+    setMenuWebsite(website || "Syntec Scientific");
+    setMenuBusiness(business || "Ireland");
     localStorage.setItem("syntec_menu_context", nextContext);
-    loadMenu(nextContext);
+    localStorage.setItem("syntec_menu_website", website || "Syntec Scientific");
+    localStorage.setItem("syntec_menu_business", business || "Ireland");
+    loadMenu({ website: website || "Syntec Scientific", business: business || "Ireland" });
 
     const params = new URLSearchParams({
       item_id: String(item?.id || ""),
@@ -179,9 +186,14 @@ export default function Header() {
                   value={menuContext}
                   onChange={(e) => {
                     const next = e.target.value;
+                    const params = contextToParams(next);
                     setMenuContext(next);
+                    setMenuWebsite(params.website);
+                    setMenuBusiness(params.business);
                     localStorage.setItem("syntec_menu_context", next);
-                    loadMenu(next);
+                    localStorage.setItem("syntec_menu_website", params.website);
+                    localStorage.setItem("syntec_menu_business", params.business);
+                    loadMenu(params);
                   }}
                 >
                   {menuContextOptions.map((w) => (
