@@ -72,8 +72,8 @@ try {
         $active = (strtoupper((string)($in['active'] ?? 'Y')) === 'N') ? 'N' : 'Y';
         $deleted = (strtoupper((string)($in['deleted'] ?? 'N')) === 'Y') ? 'Y' : 'N';
         $supplierId = ($in['supplier_id'] ?? '') !== '' ? (string)$in['supplier_id'] : null;
-        $stmt = $pdo->prepare("INSERT INTO syntec_products (product_id,prouduct_sku,product_name,supplier_id,short_name,about_1,about_2,product_image_large,product_link,active,deleted,product_sipplier_order)
-VALUES (:product_id,:prouduct_sku,:product_name,:supplier_id,:short_name,:about_1,:about_2,:product_image_large,:product_link,:active,:deleted,:product_sipplier_order)");
+        $stmt = $pdo->prepare("INSERT INTO syntec_products (product_id,prouduct_sku,product_name,supplier_id,short_name,about_1,about_2,product_image_large,product_background_colour,product_link,active,deleted,product_sipplier_order)
+VALUES (:product_id,:prouduct_sku,:product_name,:supplier_id,:short_name,:about_1,:about_2,:product_image_large,:product_background_colour,:product_link,:active,:deleted,:product_sipplier_order)");
         $stmt->execute([
             'product_id' => $in['product_id'] ?? null,
             'prouduct_sku' => $in['prouduct_sku'] ?? null,
@@ -83,6 +83,7 @@ VALUES (:product_id,:prouduct_sku,:product_name,:supplier_id,:short_name,:about_
             'about_1' => $in['about_1'] ?? null,
             'about_2' => $in['about_2'] ?? null,
             'product_image_large' => $in['product_image_large'] ?? null,
+            'product_background_colour' => $in['product_background_colour'] ?? null,
             'product_link' => $in['product_link'] ?? null,
             'active' => $active,
             'deleted' => $deleted,
@@ -127,15 +128,16 @@ VALUES (:product_id,:prouduct_sku,:product_name,:supplier_id,:short_name,:about_
         $deleted = (strtoupper((string)($in['deleted'] ?? 'N')) === 'Y') ? 'Y' : 'N';
         $supplierId = ($in['supplier_id'] ?? '') !== '' ? (string)$in['supplier_id'] : null;
         if ($lang === 'en') {
-            $stmt = $pdo->prepare("UPDATE syntec_products SET prouduct_sku=:prouduct_sku,product_name=:product_name,supplier_id=:supplier_id,short_name=:short_name,about_1=:about_1,about_2=:about_2,product_image_large=:product_image_large,product_link=:product_link,active=:active,deleted=:deleted,product_sipplier_order=:product_sipplier_order WHERE product_id=:product_id");
+            $stmt = $pdo->prepare("UPDATE syntec_products SET prouduct_sku=:prouduct_sku,product_name=:product_name,supplier_id=:supplier_id,short_name=:short_name,about_1=:about_1,about_2=:about_2,product_image_large=:product_image_large,product_background_colour=:product_background_colour,product_link=:product_link,active=:active,deleted=:deleted,product_sipplier_order=:product_sipplier_order WHERE product_id=:product_id");
         } else {
-            $stmt = $pdo->prepare("UPDATE syntec_products SET prouduct_sku=:prouduct_sku,supplier_id=:supplier_id,product_image_large=:product_image_large,product_link=:product_link,active=:active,deleted=:deleted,product_sipplier_order=:product_sipplier_order WHERE product_id=:product_id");
+            $stmt = $pdo->prepare("UPDATE syntec_products SET prouduct_sku=:prouduct_sku,supplier_id=:supplier_id,product_image_large=:product_image_large,product_background_colour=:product_background_colour,product_link=:product_link,active=:active,deleted=:deleted,product_sipplier_order=:product_sipplier_order WHERE product_id=:product_id");
         }
         $params = [
             'product_id' => $in['product_id'] ?? null,
             'prouduct_sku' => $in['prouduct_sku'] ?? null,
             'supplier_id' => $supplierId,
             'product_image_large' => $in['product_image_large'] ?? null,
+            'product_background_colour' => $in['product_background_colour'] ?? null,
             'product_link' => $in['product_link'] ?? null,
             'active' => $active,
             'deleted' => $deleted,

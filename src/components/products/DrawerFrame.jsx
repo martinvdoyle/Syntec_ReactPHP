@@ -1,4 +1,60 @@
+import { useEffect, useState } from "react";
 import * as LucideIcons from "lucide-react";
+
+function ProductImagePanel({ imageUrl, imageAlt, imageBackgroundColor }) {
+  const [magnifyActive, setMagnifyActive] = useState(false);
+
+  useEffect(() => {
+    if (!magnifyActive) return undefined;
+    const release = () => setMagnifyActive(false);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+  }, [magnifyActive]);
+
+  const handlePointerDown = (event) => {
+    event.preventDefault();
+    setMagnifyActive(true);
+  };
+
+  const handlePointerUp = () => {
+    setMagnifyActive(false);
+  };
+
+  return (
+    <>
+      <div className="relative h-80 w-full overflow-hidden rounded border border-slate-200 p-3" style={{ backgroundColor: imageBackgroundColor }}>
+        {imageUrl ? (
+          <>
+            <img src={imageUrl} alt={imageAlt} className="block max-h-full max-w-full object-contain" />
+            <button
+              type="button"
+              aria-label="Hold to magnify image"
+              className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
+              onPointerDown={handlePointerDown}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+            >
+              <LucideIcons.Search className="h-4 w-4" />
+            </button>
+          </>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">No product image</div>
+        )}
+      </div>
+      {imageUrl && magnifyActive ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/35 p-6">
+          <div className="flex h-[min(82vh,900px)] w-full max-w-[min(1100px,calc(100vw-3rem))] items-center justify-center overflow-hidden rounded-xl border border-slate-300 bg-white p-[100px] shadow-2xl">
+            <img src={imageUrl} alt={imageAlt} className="block max-h-full max-w-full object-contain" />
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
 
 export default function DrawerFrame({
   name,
@@ -7,6 +63,7 @@ export default function DrawerFrame({
   productLink,
   hoverColor,
   imageUrl,
+  imageBackgroundColor = "#F5F8FB",
   discipline,
   group,
   onClose,
@@ -17,13 +74,7 @@ export default function DrawerFrame({
   const hasProductLink = /^https?:\/\//i.test(String(productLink || "").trim());
   const body = (
     <div className="space-y-4 p-5">
-      <div className="h-80 w-full rounded border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#f8fafc_45%,#eef2f7_100%)] p-3">
-        {imageUrl ? (
-          <img src={imageUrl} alt={name} className="h-full w-full object-contain" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">No product image</div>
-        )}
-      </div>
+      <ProductImagePanel imageUrl={imageUrl} imageAlt={name} imageBackgroundColor={imageBackgroundColor} />
       <div className="flex flex-wrap justify-center gap-2">
         <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{discipline}</span>
         <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{group}</span>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as LucideIcons from "lucide-react";
 import { createSupplier, deleteSupplier, fetchSupplierImpact, fetchSuppliersAdmin, updateSupplier } from "../api/suppliersAdmin";
+import { normalizeAssetUrl } from "../api/config";
 import { fetchLanguages } from "../api/languagesAdmin";
 import SaveSuccessDialog from "../components/admin/SaveSuccessDialog";
 import "../styles/legacy-content.css";
@@ -119,20 +120,7 @@ export default function SuppliersAdminPage() {
   }, [form?.profile_1, selected?.profile_1]);
   const selectedLogoUrl = useMemo(() => {
     if (!selectedLogo) return "";
-    if (selectedLogo.startsWith("http")) return selectedLogo;
-
-    const raw = String(selectedLogo).trim().replace(/^\/+/, "");
-    const normalized = raw.startsWith("assets/")
-      ? raw
-      : raw.startsWith("images/")
-        ? `assets/${raw}`
-        : raw.startsWith("Scientific/suppliers/")
-          ? `assets/images/${raw}`
-        : raw.startsWith("suppliers/")
-          ? `assets/images/${raw}`
-          : `assets/images/Scientific/suppliers/${raw}`;
-
-    return `/${normalized}`;
+    return normalizeAssetUrl(selectedLogo, { preserveAbsoluteExternal: false });
   }, [selectedLogo]);
   const isHybridColumn = (key) => {
     const k = String(key || "").toLowerCase();

@@ -23,6 +23,32 @@ export default function ProductsPage() {
   const [enquiryForm, setEnquiryForm] = useState({ name: "", company: "", email: "", message: "" });
   const [visibleCount, setVisibleCount] = useState(60);
   const loadMoreRef = useRef(null);
+  const productsSectionRef = useRef(null);
+  const productsPaneRef = useRef(null);
+  const [magnifyActive, setMagnifyActive] = useState(false);
+  const [cardMagnifyId, setCardMagnifyId] = useState(null);
+  const [productsPaneScrollTop, setProductsPaneScrollTop] = useState(0);
+  const [productsPaneClientHeight, setProductsPaneClientHeight] = useState(0);
+  const getProductBackgroundColor = (value) => {
+    const raw = String(value || "").trim();
+    return /^#[0-9a-f]{6}$/i.test(raw) ? raw.toUpperCase() : "#F5F8FB";
+  };
+  const handleMagnifyPointerDown = (setter, value) => (event) => {
+    event.preventDefault();
+    setter(value);
+  };
+  const handleMagnifyPointerUp = (setter, fallback = null) => () => {
+    setter(fallback);
+  };
+  const ensureCatalogueHeaderVisible = () => {
+    const section = productsSectionRef.current;
+    if (!section) return;
+    const rect = section.getBoundingClientRect();
+    const headerHidden = rect.top < 0;
+    if (headerHidden) {
+      section.scrollIntoView({ block: "start", behavior: "auto" });
+    }
+  };
 
   useEffect(() => {
     const onLanguageChange = (event) => {
@@ -44,7 +70,47 @@ export default function ProductsPage() {
       return () => cancelAnimationFrame(id);
     }
     setDrawerVisible(false);
+    setMagnifyActive(false);
+    setCardMagnifyId(null);
   }, [activeProduct]);
+
+  useEffect(() => {
+    if (!magnifyActive) return undefined;
+    const release = () => setMagnifyActive(false);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+  }, [magnifyActive]);
+
+  useEffect(() => {
+    if (!cardMagnifyId) return undefined;
+    const release = () => setCardMagnifyId(null);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+  }, [cardMagnifyId]);
+
+  useEffect(() => {
+    const node = productsPaneRef.current;
+    if (!node) return undefined;
+    const syncPaneMetrics = () => {
+      setProductsPaneScrollTop(node.scrollTop);
+      setProductsPaneClientHeight(node.clientHeight);
+    };
+    syncPaneMetrics();
+    node.addEventListener("scroll", syncPaneMetrics, { passive: true });
+    window.addEventListener("resize", syncPaneMetrics);
+    return () => {
+      node.removeEventListener("scroll", syncPaneMetrics);
+      window.removeEventListener("resize", syncPaneMetrics);
+    };
+  }, []);
 
   useEffect(() => {
     setBusiness(searchParams.get("business") || "All");
@@ -107,6 +173,7 @@ export default function ProductsPage() {
           classColour: String(p.supplier_class_colour || p.class_colour || "").trim(),
           supplierLogo: p.supplier_logo_small || p.supplier_logo_large || "",
           image: toProductImageUrl(p.product_image_display || p.product_image_1 || p.product_image_large),
+          imageBackgroundColor: getProductBackgroundColor(p.product_background_colour),
         }));
         if (mounted) {
           setProducts(normalized);
@@ -463,14 +530,14 @@ export default function ProductsPage() {
   };
 
   return (
-    <section className="relative flex h-[calc(100vh-150px)] min-h-[560px] flex-col overflow-hidden rounded border border-slate-300 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-gradient-to-r from-[#e9f2fb] to-[#f7fbff] px-6 py-6">
+    <section ref={productsSectionRef} className="relative -mb-6 -mt-6 flex h-[calc(100vh-150px)] min-h-[560px] flex-col overflow-hidden rounded-b border border-slate-300 border-t-2 border-t-[#78BE20] bg-white shadow-sm">
+      <div className="bg-gradient-to-r from-[#e9f2fb] to-[#f7fbff] px-6 py-6">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e78bc]">{businessLabel}</p>
         <h1 className="mt-2 text-3xl font-black text-[#113255]">Products Catalogue</h1>
         <p className="mt-2 max-w-3xl text-slate-700">Discover premium scientific instruments, products and services organised by discipline and product group.</p>
       </div>
 
-      <div className="relative grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[250px_1fr]">
+      <div className="relative grid min-h-0 flex-1 gap-0 overflow-hidden border-t-2 border-t-[#78BE20] lg:grid-cols-[250px_1fr]">
         <aside className="overflow-y-auto border-b border-r border-slate-200 bg-[#f7fbff] p-5 lg:border-b-0">
           <h2 className="text-sm font-extrabold uppercase tracking-[0.1em] text-[#2d4a67]">Filter Products</h2>
 
@@ -521,60 +588,76 @@ export default function ProductsPage() {
           </div>
         </aside>
 
-        <div className="min-h-0 overflow-y-auto p-5">
+        <div ref={productsPaneRef} className="relative flex min-h-0 flex-col overflow-hidden p-5">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#173a61]">{business === "All" ? "Syntec Products" : `${business} Products`}</h3>
             <span className="rounded-full bg-[#e8f3ff] px-3 py-1 text-xs font-bold text-[#2e78bc]">{filtered.length} results</span>
           </div>
-          {loading ? <p className="mb-4 text-sm text-slate-600">Loading products...</p> : null}
-          {error ? <p className="mb-4 text-sm text-rose-700">{error}</p> : null}
+          <div
+            className="min-h-0 flex-1 overflow-y-auto pr-1"
+            onWheelCapture={ensureCatalogueHeaderVisible}
+            onPointerDownCapture={ensureCatalogueHeaderVisible}
+          >
+            {loading ? <p className="mb-4 text-sm text-slate-600">Loading products...</p> : null}
+            {error ? <p className="mb-4 text-sm text-rose-700">{error}</p> : null}
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleProducts.map((p) => (
-              <article key={p.id} className="group flex h-full flex-col overflow-hidden rounded border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="h-56 w-full border-b border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#f8fafc_45%,#eef2f7_100%)] p-3">
-                  <img src={p.image} alt={p.name} className="h-full w-full object-contain" />
-                </div>
-                <div className="flex flex-1 flex-col p-3">
-                  <div className="mb-2 flex flex-wrap justify-center gap-2">
-                    <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{p.discipline}</span>
-                    <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{p.group}</span>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleProducts.map((p) => (
+                <article key={p.id} className="group flex h-full flex-col overflow-hidden rounded border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="relative flex h-56 w-full items-center justify-center overflow-hidden border-b border-slate-200 p-3" style={{ backgroundColor: p.imageBackgroundColor }}>
+                    <img src={p.image} alt={p.name} className="block max-h-full max-w-full object-contain" />
+                    <button
+                      type="button"
+                      aria-label="Hold to magnify image"
+                      className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
+                      onPointerDown={handleMagnifyPointerDown(setCardMagnifyId, p.id)}
+                      onPointerUp={handleMagnifyPointerUp(setCardMagnifyId)}
+                      onPointerCancel={handleMagnifyPointerUp(setCardMagnifyId)}
+                    >
+                      <LucideIcons.Search className="h-4 w-4" />
+                    </button>
                   </div>
-                  <h4 className="line-clamp-2 border-l-[6px] border-[#5ca2ea] pl-2 text-base font-bold text-[#173a61]">{p.name}</h4>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900">{p.supplier}</p>
-                    {toSupplierLogoUrl(p.supplierLogo) ? (
-                      <img
-                        src={toSupplierLogoUrl(p.supplierLogo)}
-                        alt={p.supplier}
-                        className="h-8 w-auto max-w-[120px] object-contain"
-                        onError={(e) => {
-                          const fallback = toSupplierLogoUrl(p.supplierLogo).replace("/assets/images/Scientific/suppliers/", "/assets/images/");
-                          if (e.currentTarget.src.endsWith(fallback)) {
-                            e.currentTarget.style.display = "none";
-                            return;
-                          }
-                          e.currentTarget.src = fallback;
-                        }}
-                      />
-                    ) : null}
+                  <div className="flex flex-1 flex-col p-3">
+                    <div className="mb-2 flex flex-wrap justify-center gap-2">
+                      <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{p.discipline}</span>
+                      <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{p.group}</span>
+                    </div>
+                    <h4 className="line-clamp-2 border-l-[6px] border-[#5ca2ea] pl-2 text-base font-bold text-[#173a61]">{p.name}</h4>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-900">{p.supplier}</p>
+                      {toSupplierLogoUrl(p.supplierLogo) ? (
+                        <img
+                          src={toSupplierLogoUrl(p.supplierLogo)}
+                          alt={p.supplier}
+                          className="h-8 w-auto max-w-[120px] object-contain"
+                          onError={(e) => {
+                            const fallback = toSupplierLogoUrl(p.supplierLogo).replace("/assets/images/Scientific/suppliers/", "/assets/images/");
+                            if (e.currentTarget.src.endsWith(fallback)) {
+                              e.currentTarget.style.display = "none";
+                              return;
+                            }
+                            e.currentTarget.src = fallback;
+                          }}
+                        />
+                      ) : null}
+                    </div>
+                    <p className="mt-2 min-h-[120px] text-sm leading-5 text-slate-700">{textSnippet(p.about)}</p>
+                    <button
+                      className="mt-auto w-full rounded bg-[#5ca2ea] px-3 py-2 text-sm font-bold text-white transition hover:bg-[#4a92dc]"
+                      onClick={() => setActiveProduct(p)}
+                    >
+                      View Product
+                    </button>
                   </div>
-                  <p className="mt-2 min-h-[120px] text-sm leading-5 text-slate-700">{textSnippet(p.about)}</p>
-                  <button
-                    className="mt-auto w-full rounded bg-[#5ca2ea] px-3 py-2 text-sm font-bold text-white transition hover:bg-[#4a92dc]"
-                    onClick={() => setActiveProduct(p)}
-                  >
-                    View Product
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-          {visibleCount < filtered.length ? (
-            <div ref={loadMoreRef} className="py-6 text-center text-sm font-semibold text-slate-500">
-              Loading more products...
+                </article>
+              ))}
             </div>
-          ) : null}
+            {visibleCount < filtered.length ? (
+              <div ref={loadMoreRef} className="py-6 text-center text-sm font-semibold text-slate-500">
+                Loading more products...
+              </div>
+            ) : null}
+          </div>
           {activeProduct ? (
             <div className="absolute inset-0 z-50 overflow-hidden">
               <button
@@ -624,8 +707,18 @@ export default function ProductsPage() {
                   </button>
                 </div>
                 <div className="space-y-4 p-5">
-                  <div className="h-80 w-full rounded border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#f8fafc_45%,#eef2f7_100%)] p-3">
-                    <img src={activeProduct.image} alt={activeProduct.name} className="h-full w-full object-contain" />
+                  <div className="relative h-80 w-full overflow-hidden rounded border border-slate-200 p-3" style={{ backgroundColor: activeProduct.imageBackgroundColor }}>
+                    <img src={activeProduct.image} alt={activeProduct.name} className="block max-h-full max-w-full object-contain" />
+                    <button
+                      type="button"
+                      aria-label="Hold to magnify image"
+                      className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/95 text-slate-700 shadow-sm transition hover:border-[#5ca2ea] hover:text-[#173a61]"
+                      onPointerDown={handleMagnifyPointerDown(setMagnifyActive, true)}
+                      onPointerUp={handleMagnifyPointerUp(setMagnifyActive, false)}
+                      onPointerCancel={handleMagnifyPointerUp(setMagnifyActive, false)}
+                    >
+                      <LucideIcons.Search className="h-4 w-4" />
+                    </button>
                   </div>
                   <div className="flex flex-wrap justify-center gap-2">
                     <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{activeProduct.discipline}</span>
@@ -694,6 +787,30 @@ export default function ProductsPage() {
                     <button className="w-full rounded bg-[#5ca2ea] px-3 py-2 text-sm font-bold text-white transition hover:bg-[#4a92dc]" type="submit">Send Enquiry</button>
                   </form>
                 )}
+              </div>
+            </div>
+          ) : null}
+          {cardMagnifyId ? (
+            <div
+              className="absolute inset-x-0 z-[100] flex items-center justify-center bg-slate-900/35 p-6"
+              style={{ top: productsPaneScrollTop, height: productsPaneClientHeight || undefined }}
+            >
+              <div className="flex h-[min(calc(100%-3rem),900px)] w-full max-w-[min(1100px,calc(100%-3rem))] items-center justify-center overflow-hidden rounded-xl border-2 border-[#78BE20] bg-white p-[100px] shadow-2xl">
+                <img
+                  src={visibleProducts.find((p) => p.id === cardMagnifyId)?.image || products.find((p) => p.id === cardMagnifyId)?.image || ""}
+                  alt={visibleProducts.find((p) => p.id === cardMagnifyId)?.name || products.find((p) => p.id === cardMagnifyId)?.name || ""}
+                  className="block max-h-full max-w-full object-contain"
+                />
+              </div>
+            </div>
+          ) : null}
+          {magnifyActive && activeProduct ? (
+            <div
+              className="absolute inset-x-0 z-[110] flex items-center justify-center bg-slate-900/35 p-6"
+              style={{ top: productsPaneScrollTop, height: productsPaneClientHeight || undefined }}
+            >
+              <div className="flex h-[min(calc(100%-3rem),900px)] w-full max-w-[min(1100px,calc(100%-3rem))] items-center justify-center overflow-hidden rounded-xl border-2 border-[#78BE20] bg-white p-[100px] shadow-2xl">
+                <img src={activeProduct.image} alt={activeProduct.name} className="block max-h-full max-w-full object-contain" />
               </div>
             </div>
           ) : null}

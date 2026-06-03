@@ -6,7 +6,7 @@ import { createProduct, deleteProduct, fetchProductsAdmin, updateProduct } from 
 import { fetchSuppliersAdmin } from "../api/suppliersAdmin";
 import { fetchLanguages } from "../api/languagesAdmin";
 import { fetchTableAdmin } from "../api/tableAdmin";
-import { API_BASE_URL } from "../api/config";
+import { normalizeAssetUrl } from "../api/config";
 import SaveSuccessDialog from "../components/admin/SaveSuccessDialog";
 import DrawerFrame from "../components/products/DrawerFrame";
 import "../styles/legacy-content.css";
@@ -20,6 +20,7 @@ const empty = {
   short_name: "",
   about_1: "",
   product_image_large: "",
+  product_background_colour: "",
   product_link: "",
   active: "Y",
   deleted: "N",
@@ -132,6 +133,28 @@ export default function ProductsAdminPage() {
     });
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [items]);
+
+  useEffect(() => {
+    if (isNew) return;
+    if (!filteredItems.length) {
+      setSelectedId(null);
+      return;
+    }
+    const firstVisibleId = rowKey(filteredItems[0]);
+    setSelectedId((prev) => {
+      if (!prev) return firstVisibleId;
+      return filteredItems.some((it) => rowKey(it) === prev) ? prev : firstVisibleId;
+    });
+  }, [filteredItems, isNew]);
+
+  useEffect(() => {
+    if (isNew) return;
+    if (!filteredItems.length) {
+      setSelectedId(null);
+      return;
+    }
+    setSelectedId(rowKey(filteredItems[0]));
+  }, [supplierFilter, filterActiveY, filterDeletedN, isNew, filteredItems]);
 
   useEffect(() => {
     if (!selected) return;
@@ -348,28 +371,21 @@ export default function ProductsAdminPage() {
     });
     return doc.body.innerHTML;
   }, [form.about_1]);
-  const assetBaseUrl = useMemo(() => API_BASE_URL.replace(/\/api\/?$/, ""), []);
   const productImageUrl = useMemo(() => {
     const rawImage = String(form.product_image_display || form.product_image_1 || form.product_image_large || "").trim();
     if (!rawImage) return "";
-    if (rawImage.startsWith("http")) return rawImage;
-
-    const raw = rawImage.replace(/^\/+/, "");
-    const normalized = raw.startsWith("assets/")
-      ? raw
-      : raw.startsWith("images/")
-        ? `assets/${raw}`
-        : raw.startsWith("Scientific/suppliers/")
-          ? `assets/images/${raw}`
-          : `assets/images/Scientific/suppliers/${raw}`;
-
-    return `${assetBaseUrl}/${normalized}`;
-  }, [assetBaseUrl, form.product_image_display, form.product_image_1, form.product_image_large]);
+    const preserveAbsoluteExternal = String(form.product_image_external || "").trim().toUpperCase() === "Y";
+    return normalizeAssetUrl(rawImage, { preserveAbsoluteExternal });
+  }, [form.product_image_display, form.product_image_1, form.product_image_large, form.product_image_external]);
   const previewSupplierHoverColor = useMemo(() => {
     const sid = String(form.supplier_id || "").trim();
     const fromSupplier = suppliers.find((s) => String(s.supplier_id || "").trim() === sid)?.class_colour;
     return String(fromSupplier || form.class_colour || "").trim();
   }, [suppliers, form.supplier_id, form.class_colour]);
+  const previewImageBackgroundColor = useMemo(() => {
+    const raw = String(form.product_background_colour || "").trim();
+    return /^#[0-9a-f]{6}$/i.test(raw) ? raw.toUpperCase() : "#F5F8FB";
+  }, [form.product_background_colour]);
   const hasPreviewRecord = useMemo(
     () => Boolean(String(form.product_id || "").trim() || String(form.product_name || "").trim()),
     [form.product_id, form.product_name]
@@ -377,17 +393,8 @@ export default function ProductsAdminPage() {
   const previewSupplierLogoUrl = useMemo(() => {
     const rawLogo = String(form.supplier_logo_small || form.supplier_logo_large || "").trim();
     if (!rawLogo) return "";
-    if (rawLogo.startsWith("http")) return rawLogo;
-    const raw = rawLogo.replace(/^\/+/, "");
-    const normalized = raw.startsWith("assets/")
-      ? raw
-      : raw.startsWith("images/")
-        ? `assets/${raw}`
-        : raw.startsWith("Scientific/suppliers/")
-          ? `assets/images/${raw}`
-          : `assets/images/Scientific/suppliers/${raw}`;
-    return `${assetBaseUrl}/${normalized}`;
-  }, [assetBaseUrl, form.supplier_logo_small, form.supplier_logo_large]);
+    return normalizeAssetUrl(rawLogo, { preserveAbsoluteExternal: false });
+  }, [form.supplier_logo_small, form.supplier_logo_large]);
   const isHybridColumn = (key) => {
     const k = String(key || "").toLowerCase();
     return k === "id" || k.endsWith("_flag") || k === "slug" || k === "created_at" || k === "updated_at" || k === "supplier_name_lookup";
@@ -595,7 +602,10 @@ export default function ProductsAdminPage() {
               <select
                 className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm font-medium normal-case tracking-normal text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100"
                 value={supplierFilter}
-                onChange={(e) => setSupplierFilter(e.target.value)}
+                onChange={(e) => {
+                  setSupplierFilter(e.target.value);
+                  setIsNew(false);
+                }}
               >
                 <option value="">All suppliers</option>
                 {supplierOptions.map(([id, name]) => (
@@ -608,11 +618,25 @@ export default function ProductsAdminPage() {
           </div>
           <div className="mb-2 flex items-center gap-4 px-1 text-xs font-semibold text-slate-700">
             <label className="inline-flex items-center gap-1.5">
-              <input type="checkbox" checked={filterActiveY} onChange={(e) => setFilterActiveY(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={filterActiveY}
+                onChange={(e) => {
+                  setFilterActiveY(e.target.checked);
+                  setIsNew(false);
+                }}
+              />
               <span>Active (Y)</span>
             </label>
             <label className="inline-flex items-center gap-1.5">
-              <input type="checkbox" checked={filterDeletedN} onChange={(e) => setFilterDeletedN(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={filterDeletedN}
+                onChange={(e) => {
+                  setFilterDeletedN(e.target.checked);
+                  setIsNew(false);
+                }}
+              />
               <span>Deleted (Y)</span>
             </label>
           </div>
@@ -709,7 +733,7 @@ export default function ProductsAdminPage() {
                   ))}
                 </select>
               </label>
-              {[["product_image_large", "PRODUCT_IMAGE_LARGE"]].map(([k, lbl]) => (
+              {[["product_image_large", "PRODUCT_IMAGE_LARGE"], ["product_background_colour", "PRODUCT_BACKGROUND_COLOUR"]].map(([k, lbl]) => (
                 <label key={k} className="flex flex-col gap-1">
                   <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">{lbl}</span>
                   <input className="rounded-lg border border-slate-400 bg-slate-50 px-2 py-1.5 font-medium text-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-100" value={form[k] ?? ""} onChange={(e) => f(k, e.target.value)} />
@@ -860,9 +884,9 @@ export default function ProductsAdminPage() {
             </button>
           </div>
           {previewOn ? (
-            <div className="max-h-[calc(100vh-120px)] overflow-auto rounded-xl border border-slate-200 p-3">
+            <div className="overflow-visible rounded-xl border border-slate-200 p-3">
               {hasPreviewRecord ? (
-                <div className="mx-auto w-[760px] max-w-[760px]">
+                <div className="mx-auto w-full max-w-[760px]">
                 <DrawerFrame
                   mode="preview"
                   name={form.product_name || "-"}
@@ -871,6 +895,7 @@ export default function ProductsAdminPage() {
                   productLink={form.product_link || ""}
                   hoverColor={previewSupplierHoverColor}
                   imageUrl={productImageUrl}
+                  imageBackgroundColor={previewImageBackgroundColor}
                   discipline={form.discipline || "(no discipline)"}
                   group={form.product_group || "(no group)"}
                 >

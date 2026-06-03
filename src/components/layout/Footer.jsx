@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="mt-10">
+    <footer className="border-t-2 border-t-[#78BE20]">
       <div className="bg-[#5ca2ea] py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-white">
         Syntec Group supplier of premium scientific and clinical instruments, products and services
       </div>
