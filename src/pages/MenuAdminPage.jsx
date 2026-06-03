@@ -11,8 +11,19 @@ function kebabToPascal(name) {
     .join("");
 }
 
-function IconMark({ iconClass, className = "" }) {
+function normalizeIconClass(iconClass) {
   const raw = (iconClass || "").toLowerCase().trim();
+  if (!raw) return "";
+  if (raw.includes(":")) return raw;
+
+  const legacyMap = [
+    ["fa-syringe", "lucide:syringe"],
+  ];
+  return legacyMap.find(([legacy]) => raw.includes(legacy))?.[1] || raw;
+}
+
+function IconMark({ iconClass, className = "" }) {
+  const raw = normalizeIconClass(iconClass);
   if (!raw) return <span className={className}>•</span>;
   const [library, key] = raw.includes(":") ? raw.split(":", 2) : ["", raw];
 

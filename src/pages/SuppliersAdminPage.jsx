@@ -2,9 +2,40 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as LucideIcons from "lucide-react";
 import { createSupplier, deleteSupplier, fetchSupplierImpact, fetchSuppliersAdmin, updateSupplier } from "../api/suppliersAdmin";
 import { fetchLanguages } from "../api/languagesAdmin";
-import { API_BASE_URL } from "../api/config";
 import SaveSuccessDialog from "../components/admin/SaveSuccessDialog";
 import "../styles/legacy-content.css";
+
+const FALLBACK_SUPPLIER_FIELDS = [
+  "supplier_id",
+  "supplier_name",
+  "short_name",
+  "business",
+  "website",
+  "supplier_logo_small",
+  "supplier_logo_large",
+  "class_colour",
+  "profile_1",
+  "active",
+  "deleted",
+];
+
+function createNewSupplierForm(items) {
+  const existingKeys = Object.keys(items?.[0] || {});
+  const keys = Array.from(
+    new Set([
+      ...existingKeys,
+      ...FALLBACK_SUPPLIER_FIELDS,
+    ])
+  );
+
+  return keys.reduce((acc, key) => {
+    const normalized = String(key).toLowerCase();
+    if (normalized === "active") acc[key] = "Y";
+    else if (normalized === "deleted") acc[key] = "N";
+    else acc[key] = "";
+    return acc;
+  }, {});
+}
 
 export default function SuppliersAdminPage() {
   const [lang, setLang] = useState("en");
@@ -68,11 +99,11 @@ export default function SuppliersAdminPage() {
   }, [items, query, filterActiveY, filterDeletedN]);
   const selected = useMemo(() => filtered.find((s) => getRowKey(s) === selectedId) || filtered[0] || null, [filtered, selectedId]);
   useEffect(() => {
+    if (isNew) return;
     if (!selected) return;
     setForm(selected);
     setIsNew(false);
-  }, [selected]);
-  const assetBaseUrl = useMemo(() => API_BASE_URL.replace(/\/api\/?$/, ""), []);
+  }, [selected, isNew]);
   const selectedLogo = selected?.supplier_logo_large || selected?.supplier_logo_small || "";
   const previewHtml = useMemo(() => {
     const raw = (form && Object.prototype.hasOwnProperty.call(form, "profile_1"))
@@ -101,8 +132,8 @@ export default function SuppliersAdminPage() {
           ? `assets/images/${raw}`
           : `assets/images/Scientific/suppliers/${raw}`;
 
-    return `${assetBaseUrl}/${normalized}`;
-  }, [assetBaseUrl, selectedLogo]);
+    return `/${normalized}`;
+  }, [selectedLogo]);
   const isHybridColumn = (key) => {
     const k = String(key || "").toLowerCase();
     return k === "id" || k.endsWith("_flag") || k === "slug" || k === "sort_order" || k === "created_at" || k === "updated_at";
@@ -110,7 +141,8 @@ export default function SuppliersAdminPage() {
   const isYnField = (key, value) => {
     const k = String(key || "").toLowerCase();
     if (k.startsWith("date_")) return false;
-    if (!(k.includes("active") || k.includes("deleted") || k.endsWith("_yn") || k.endsWith("_smaller") || k.includes("external"))) return false;
+    if (k === "supplier_logo_large_scale_smaller") return false;
+    if (!(k.includes("active") || k.includes("deleted") || k.endsWith("_yn") || k.includes("external"))) return false;
     if (value == null || value === "") return true;
     const v = String(value).toUpperCase();
     return v === "Y" || v === "N";
@@ -254,7 +286,7 @@ export default function SuppliersAdminPage() {
           <div className="mb-2 flex items-center gap-2">
             <button
               className="rounded-lg bg-cyan-600 px-3 py-1 font-semibold text-white shadow-sm transition hover:bg-cyan-700"
-              onClick={() => { setIsNew(true); setSelectedId(null); setForm({ active: "Y", deleted: "N" }); }}
+              onClick={() => { setIsNew(true); setSelectedId(null); setForm(createNewSupplierForm(items)); }}
             >
               New Supplier
             </button>
@@ -303,7 +335,7 @@ export default function SuppliersAdminPage() {
                   data-supplier-id={getRowKey(s)}
                   type="button"
                   onClick={() => setSelectedId(getRowKey(s))}
-                  className={`w-full rounded-lg border-l-4 px-2 py-1.5 text-left text-sm transition ${
+                  className={`w-full rounded-lg border-l-[6px] px-2 py-1.5 text-left text-sm transition ${
                     getRowKey(selected) === getRowKey(s)
                       ? "border-l-cyan-700 border-r-cyan-300 border-y-cyan-300 bg-cyan-100 text-cyan-950"
                       : "border-l-transparent border-r-transparent border-y-transparent hover:border-r-slate-200 hover:border-y-slate-200 hover:bg-slate-50"
@@ -318,11 +350,11 @@ export default function SuppliersAdminPage() {
 
         <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
           <h2 className="mb-3 text-2xl font-bold text-slate-800">Supplier Details</h2>
-          {!selected ? (
+          {!selected && !isNew ? (
             <p className="text-slate-500">No suppliers found.</p>
           ) : (
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">
+              <h3 className="mb-3 border-l-[6px] border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">
                 Supplier Fields
               </h3>
               <div className="mb-3 inline-grid grid-cols-2 gap-3 text-sm">
@@ -380,7 +412,7 @@ export default function SuppliersAdminPage() {
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="mb-3 border-l-4 border-cyan-500 pl-2">
+          <div className="mb-3 border-l-[6px] border-cyan-500 pl-2">
             <div className="flex items-center gap-2">
               <h3 className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Live Preview</h3>
               <img
@@ -392,12 +424,14 @@ export default function SuppliersAdminPage() {
           </div>
           <div className="legacy-suppliers-content max-h-[72vh] overflow-auto rounded-xl border border-slate-200 bg-white p-4">
             {selectedLogoUrl ? (
-              <div className="mb-4 inline-block overflow-hidden rounded-xl border border-slate-200 bg-white p-2">
+              <div className="mb-4 flex justify-center">
+                <div className="inline-block overflow-hidden rounded-xl border border-slate-200 bg-white p-2">
                 <img
                   src={selectedLogoUrl}
                   alt={selected?.supplier_name || "Supplier logo"}
                   className="h-14 w-auto max-w-full object-contain"
                 />
+                </div>
               </div>
             ) : null}
             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />

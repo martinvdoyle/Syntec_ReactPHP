@@ -159,7 +159,7 @@ export default function Header() {
             <div className="syn-bnav-row grid h-[74px] grid-cols-1 items-stretch gap-0 lg:grid-cols-[180px_minmax(0,1fr)_170px]">
             <div className="syn-bnav-logo justify-self-start lg:w-[180px]">
               <Link to="/" className="relative z-50 inline-flex h-full items-center pl-2 pr-2">
-                <img src={contextLogo} alt="Syntec" className="h-14 w-auto" />
+                <img src={contextLogo} alt="Syntec" className="h-full w-auto" />
               </Link>
             </div>
 

@@ -44,7 +44,6 @@ export default function ProductsAdminPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState("");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [previewVideoOpen, setPreviewVideoOpen] = useState(false);
   const listRef = useRef(null);
 
   const load = async () => {
@@ -218,6 +217,124 @@ export default function ProductsAdminPage() {
     // Replace icon-token <i> nodes with rendered SVG icons.
     const parser = new DOMParser();
     const doc = parser.parseFromString(decoded, "text/html");
+    const extractLegacyMediaItems = (value) => {
+      const normalize = (path) =>
+        String(path || "")
+          .replace(/^#WORKSPACE_FILES#\/?assets\//i, "/assets/")
+          .replace(/^#WORKSPACE_FILES#\/?images\//i, "/assets/images/")
+          .replace(/ /g, "%20");
+      const sourceMatches = [...String(value || "").matchAll(/(?:#WORKSPACE_FILES#\/?(?:assets|images)\/|\/assets\/)[^"'>]+?\.mp4/gi)].map((m) => normalize(m[0]));
+      const posterMatches = [...String(value || "").matchAll(/(?:#WORKSPACE_FILES#\/?(?:assets|images)\/|\/assets\/)[^"'>]+?\.(?:jpg|jpeg|png|webp)/gi)].map((m) => normalize(m[0]));
+      const seen = new Set();
+      return sourceMatches
+        .map((mp4, index) => ({
+          mp4,
+          poster: posterMatches[index] || posterMatches[0] || "",
+        }))
+        .filter((media) => {
+          if (!media.mp4 || seen.has(media.mp4)) return false;
+          seen.add(media.mp4);
+          return true;
+        });
+    };
+    const normalizeLegacyAssetPath = (value) => {
+      const rawPath = String(value || "")
+        .trim()
+        .replace(/^['"]+|['"]+$/g, "");
+      if (!rawPath) return "";
+      const withoutWorkspace = rawPath.replace(/^#WORKSPACE_FILES#\/?/i, "");
+      if (withoutWorkspace === rawPath && (rawPath.startsWith("http") || rawPath.startsWith("mailto:") || rawPath.startsWith("#"))) return rawPath;
+      const clean = withoutWorkspace.replace(/^\/+/, "");
+      const localPath = clean.startsWith("assets/")
+        ? `/${clean}`
+        : clean.startsWith("images/")
+          ? `/assets/${clean}`
+          : clean.startsWith("Scientific/") || clean.startsWith("International/") || clean.startsWith("SysLabs/")
+            ? `/assets/images/${clean}`
+            : clean;
+      return localPath.replace(/ /g, "%20");
+    };
+    doc.querySelectorAll("img[src]").forEach((el) => {
+      const normalized = normalizeLegacyAssetPath(el.getAttribute("src"));
+      if (normalized) el.setAttribute("src", normalized);
+    });
+    doc.querySelectorAll("source[src], video[src], iframe[src]").forEach((el) => {
+      const normalized = normalizeLegacyAssetPath(el.getAttribute("src"));
+      if (normalized) el.setAttribute("src", normalized);
+    });
+    doc.querySelectorAll("video[poster]").forEach((el) => {
+      const normalized = normalizeLegacyAssetPath(el.getAttribute("poster"));
+      if (normalized) el.setAttribute("poster", normalized);
+    });
+    doc.querySelectorAll(".panel-collapse").forEach((el) => {
+      el.classList.remove("show", "in", "active");
+      el.style.display = "none";
+      el.setAttribute("aria-expanded", "false");
+    });
+    doc.querySelectorAll("[data-toggle='collapse'], .panel-title a").forEach((trigger) => {
+      trigger.classList.add("collapsed");
+      trigger.setAttribute("aria-expanded", "false");
+    });
+    Array.from(doc.querySelectorAll(".panel")).forEach((panel) => {
+      const title = (panel.querySelector(".panel-title a, .panel-title")?.textContent || "").toLowerCase();
+      if (!title.includes("video")) return;
+      const label = (panel.querySelector(".panel-title a, .panel-title")?.textContent || "Video").trim();
+      const details = doc.createElement("details");
+      details.className = "legacy-video-details";
+      const summary = doc.createElement("summary");
+      summary.className = "legacy-video-summary";
+      summary.innerHTML = `${iconSvgForToken("lucide:video") || ""}<span>${label}</span>`;
+      const body = doc.createElement("div");
+      body.className = "legacy-video-details-body";
+      const stack = doc.createElement("div");
+      stack.className = "legacy-video-stack";
+      extractLegacyMediaItems(decoded).forEach((media) => {
+        if (!media.mp4) return;
+        const item = doc.createElement("div");
+        item.className = "post-item legacy-video-item";
+        item.innerHTML = `
+          <div class="post-image" style="text-align: center;">
+            <video ${media.poster ? `poster="${media.poster}"` : ""} controls style="display: block; width: 100%; max-width: 760px; height: auto; margin: 0 auto; background: #000;">
+              <source src="${media.mp4}" type="video/mp4">
+            </video>
+          </div>
+        `;
+        stack.appendChild(item);
+      });
+      if (stack.children.length) {
+        const misplaced = Array.from(panel.querySelectorAll("#specs, main-flip"));
+        body.appendChild(stack);
+        details.appendChild(summary);
+        details.appendChild(body);
+        panel.replaceWith(details);
+        let insertAfter = details;
+        misplaced.forEach((node) => {
+          const parent = insertAfter.parentNode || doc.body;
+          parent.insertBefore(node, insertAfter.nextSibling);
+          insertAfter = node;
+        });
+      } else {
+        panel.remove();
+      }
+
+      panel.querySelectorAll(".panel-body .panel-body").forEach((nestedBody) => {
+        const parent = nestedBody.parentNode;
+        if (!parent) return;
+        while (nestedBody.firstChild) parent.insertBefore(nestedBody.firstChild, nestedBody);
+        nestedBody.remove();
+      });
+
+      const accordion = panel.closest(".panel-group, .accordion") || panel;
+      const misplaced = Array.from(panel.querySelectorAll("#specs, main-flip"));
+      if (!misplaced.length) return;
+
+      let insertAfter = accordion;
+      misplaced.forEach((node) => {
+        const parent = insertAfter.parentNode || doc.body;
+        parent.insertBefore(node, insertAfter.nextSibling);
+        insertAfter = node;
+      });
+    });
     const iconNodes = doc.querySelectorAll("i.icon-token");
     iconNodes.forEach((el) => {
       const cls = el.getAttribute("class") || "";
@@ -229,19 +346,7 @@ export default function ProductsAdminPage() {
       span.innerHTML = svg;
       el.replaceWith(span);
     });
-    Array.from(doc.querySelectorAll(".panel")).forEach((panel) => {
-      const title = (panel.querySelector(".panel-title a, .panel-title")?.textContent || "").toLowerCase();
-      if (title.includes("video")) panel.remove();
-    });
-    doc.querySelectorAll("video").forEach((v) => v.remove());
     return doc.body.innerHTML;
-  }, [form.about_1]);
-  const previewMedia = useMemo(() => {
-    const raw = String(form.about_1 || "");
-    const mp4 = raw.match(/(?:#WORKSPACE_FILES#assets\/|\/assets\/)[^"'\s>]+\.mp4/i)?.[0] || "";
-    const jpg = raw.match(/(?:#WORKSPACE_FILES#assets\/|\/assets\/)[^"'\s>]+\.jpg/i)?.[0] || "";
-    const norm = (v) => v ? v.replace(/^#WORKSPACE_FILES#assets\//i, "/assets/") : "";
-    return { mp4: norm(mp4), poster: norm(jpg) };
   }, [form.about_1]);
   const assetBaseUrl = useMemo(() => API_BASE_URL.replace(/\/api\/?$/, ""), []);
   const productImageUrl = useMemo(() => {
@@ -356,6 +461,39 @@ export default function ProductsAdminPage() {
     const clickable = panel.querySelector("[data-toggle='collapse'], .panel-title a") || trigger;
     clickable.classList.toggle("collapsed", isOpen);
     clickable.setAttribute("aria-expanded", String(!isOpen));
+    const triggerText = (clickable.textContent || trigger.textContent || "").toLowerCase();
+    if (!isOpen && triggerText.includes("video")) {
+      const panelBody = target.querySelector(".panel-body") || target;
+      if (!panelBody.querySelector("video, iframe")) {
+        const decoded = decodeHtml(form.about_1 || "");
+        const normalize = (path) =>
+          String(path || "")
+            .replace(/^#WORKSPACE_FILES#\/?assets\//i, "/assets/")
+            .replace(/^#WORKSPACE_FILES#\/?images\//i, "/assets/images/")
+            .replace(/ /g, "%20");
+        const sourceMatches = [...decoded.matchAll(/(?:#WORKSPACE_FILES#\/?(?:assets|images)\/|\/assets\/)[^"'>]+?\.mp4/gi)].map((m) => normalize(m[0]));
+        const posterMatches = [...decoded.matchAll(/(?:#WORKSPACE_FILES#\/?(?:assets|images)\/|\/assets\/)[^"'>]+?\.(?:jpg|jpeg|png|webp)/gi)].map((m) => normalize(m[0]));
+        const stack = document.createElement("div");
+        stack.className = "legacy-video-stack";
+        stack.style.display = "grid";
+        stack.style.gap = "1rem";
+        sourceMatches.forEach((mp4, index) => {
+          if (!mp4) return;
+          const poster = posterMatches[index] || posterMatches[0] || "";
+          const item = document.createElement("div");
+          item.className = "post-item legacy-video-item";
+          item.innerHTML = `
+            <div class="post-image" style="text-align: center;">
+              <video ${poster ? `poster="${poster}"` : ""} controls style="display: block; width: 100%; max-width: 760px; height: auto; margin: 0 auto; background: #000;">
+                <source src="${mp4}" type="video/mp4">
+              </video>
+            </div>
+          `;
+          stack.appendChild(item);
+        });
+        if (stack.children.length) panelBody.appendChild(stack);
+      }
+    }
   };
 
   const remove = async () => {
@@ -491,7 +629,7 @@ export default function ProductsAdminPage() {
               <li key={rowKey(it)}>
                 <button
                   data-product-id={rowKey(it)}
-                  className={`w-full rounded-lg border-l-4 px-2 py-1.5 text-left text-sm transition ${
+                  className={`w-full rounded-lg border-l-[6px] px-2 py-1.5 text-left text-sm transition ${
                     selectedId === rowKey(it)
                       ? "border-l-cyan-700 border-r-cyan-300 border-y-cyan-300 bg-cyan-100 text-cyan-950"
                       : "border-l-transparent border-r-transparent border-y-transparent hover:border-r-slate-200 hover:border-y-slate-200 hover:bg-slate-50"
@@ -528,7 +666,7 @@ export default function ProductsAdminPage() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Flags</h3>
+            <h3 className="mb-3 border-l-[6px] border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Flags</h3>
             <div className="inline-grid grid-cols-2 gap-3 text-sm">
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">ACTIVE</span>
@@ -542,7 +680,7 @@ export default function ProductsAdminPage() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Identity</h3>
+            <h3 className="mb-3 border-l-[6px] border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Identity</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               {[["product_id", "PRODUCT_ID"], ["prouduct_sku", "PROUDUCT_SKU"], ["product_name", "PRODUCT_NAME"]].map(([k, lbl]) => (
                 <label key={k} className="flex flex-col gap-1">
@@ -554,7 +692,7 @@ export default function ProductsAdminPage() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Classification and Media</h3>
+            <h3 className="mb-3 border-l-[6px] border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Classification and Media</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">SUPPLIER_ID</span>
@@ -645,7 +783,7 @@ export default function ProductsAdminPage() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Content</h3>
+            <h3 className="mb-3 border-l-[6px] border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Content</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               {hasCol("category_summary") ? (
                 <label className="col-span-2 flex flex-col gap-1">
@@ -683,7 +821,7 @@ export default function ProductsAdminPage() {
 
           {additionalColumns.length ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Additional Columns</h3>
+              <h3 className="mb-3 border-l-[6px] border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Additional Columns</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 {additionalColumns.map((k) => (
                   <label key={k} className="flex flex-col gap-1">
@@ -737,33 +875,10 @@ export default function ProductsAdminPage() {
                   group={form.product_group || "(no group)"}
                 >
                     <div
-                      className="legacy-products-content prose prose-sm max-w-none [&_table]:block [&_table]:overflow-x-auto"
+                      className="legacy-products-content prose prose-sm max-w-none"
                       onClickCapture={togglePreviewAccordion}
                       dangerouslySetInnerHTML={{ __html: previewHtml }}
                     />
-                    {previewMedia.mp4 ? (
-                      <div className="rounded border border-slate-300 bg-[#dcdcdc]">
-                        <button
-                          type="button"
-                          className="flex w-full items-center justify-between px-4 py-3 text-left text-base font-extrabold text-slate-900"
-                          onClick={() => setPreviewVideoOpen((v) => !v)}
-                          aria-expanded={previewVideoOpen}
-                        >
-                          <span className="flex items-center gap-2">
-                            <LucideIcons.Video className="h-4 w-4 text-cyan-700" />
-                            {form.product_name || "Product"} Video
-                          </span>
-                          <LucideIcons.ChevronDown className={`h-4 w-4 text-slate-700 transition-transform ${previewVideoOpen ? "rotate-180" : ""}`} />
-                        </button>
-                        {previewVideoOpen ? (
-                          <div className="border-t border-slate-300 bg-white p-3">
-                            <video controls poster={previewMedia.poster || undefined} className="mx-auto block h-auto w-full max-w-[760px] bg-black">
-                              <source src={previewMedia.mp4} type="video/mp4" />
-                            </video>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
                   </DrawerFrame>
                 </div>
               ) : (

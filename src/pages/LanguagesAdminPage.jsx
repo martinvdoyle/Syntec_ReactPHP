@@ -102,7 +102,7 @@ export default function LanguagesAdminPage() {
           <ul className="max-h-[70vh] space-y-1 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-1.5 pr-1">
             {sorted.map((r) => (
               <li key={r.lang_code}>
-                <button onClick={() => onSelect(r)} className={`w-full rounded-lg border-l-4 px-2 py-1.5 text-left ${selected === r.lang_code ? "border-l-cyan-700 bg-cyan-100" : "border-l-transparent hover:bg-slate-100"}`}>
+                <button onClick={() => onSelect(r)} className={`w-full rounded-lg border-l-[6px] px-2 py-1.5 text-left ${selected === r.lang_code ? "border-l-cyan-700 bg-cyan-100" : "border-l-transparent hover:bg-slate-100"}`}>
                   <div className="font-semibold">{r.lang_name} ({r.lang_code})</div>
                 </button>
               </li>

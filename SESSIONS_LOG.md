@@ -452,6 +452,10 @@ User can provide starter package containing:
 
 ### Legacy HTML / Accordion Status
 - `ABOUT_1` / `PROFILE_1` HTML is left unchanged in the database.
+- Canonical Oracle APEX legacy CSS/JS source for parity work:
+  - `C:\Websites\Syntec_Live\Website_Files\#APP_FILES#_DEV\assets\css\scoped_combined_syn.css`
+  - `C:\Websites\Syntec_Live\Website_Files\#APP_FILES#_DEV\assets\js`
+  - Do **not** use `Syntec_Register365/public_html/assets/css` as the legacy website CSS reference; that is an older Syntec site.
 - `legacy-content.css` was expanded with a scoped compatibility layer for legacy classes found in product/supplier exports:
   - `panel-group`, `accordion`, `panel`, `panel-heading`, `panel-title`, `panel-collapse`, `collapse`
   - `syn_text-block`, `syn_visible-part`, `syn_show-more-start`, `syn_toggle-icon`

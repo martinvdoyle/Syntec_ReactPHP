@@ -334,6 +334,23 @@ The developer has a local directory containing current Syntec:
 - banner assets
 - static files
 
+## Canonical Legacy CSS/JS Reference
+
+For Oracle APEX legacy CSS/JS parity work, use this folder as the source of truth:
+
+```text
+C:\Websites\Syntec_Live\Website_Files\#APP_FILES#_DEV
+```
+
+Important paths:
+
+```text
+C:\Websites\Syntec_Live\Website_Files\#APP_FILES#_DEV\assets\css\scoped_combined_syn.css
+C:\Websites\Syntec_Live\Website_Files\#APP_FILES#_DEV\assets\js
+```
+
+Do **not** use `Syntec_Register365/public_html/assets/css` as the legacy website CSS reference. That is an older Syntec website and is not the Oracle APEX public-site source.
+
 These assets may be used as reference material and migration input.
 
 Important rules:

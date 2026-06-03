@@ -396,7 +396,7 @@ export default function LookupAdminPage({ tableKey }) {
                   data-row-id={rowId}
                   type="button"
                   onClick={() => setSelectedId(rowId)}
-                  className={`w-full rounded-lg border-l-4 px-2 py-1.5 text-left text-sm transition ${
+                  className={`w-full rounded-lg border-l-[6px] px-2 py-1.5 text-left text-sm transition ${
                     getRowKey(selected) === rowId
                       ? "border-l-cyan-700 border-r-cyan-300 border-y-cyan-300 bg-cyan-100 text-cyan-950"
                       : "border-l-transparent border-r-transparent border-y-transparent hover:border-r-slate-200 hover:border-y-slate-200 hover:bg-slate-50"
@@ -421,7 +421,7 @@ export default function LookupAdminPage({ tableKey }) {
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 className="mb-3 border-l-4 border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Edit Fields</h3>
+          <h3 className="mb-3 border-l-[6px] border-cyan-500 pl-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-700">Edit Fields</h3>
           <div className="mx-auto w-full max-w-[52%]">
             <div className="mb-2 inline-grid grid-cols-2 gap-3 text-sm">
               {visibleColumns

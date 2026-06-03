@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { useSearchParams } from "react-router-dom";
 import * as LucideIcons from "lucide-react";
 import * as TablerIcons from "@tabler/icons-react";
 import { buildApiUrl } from "../api/config";
 import "../styles/legacy-content.css";
 
 export default function ProductsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [lang, setLang] = useState(() => localStorage.getItem("syntec_lang") || "en");
-  const [discipline, setDiscipline] = useState("All");
-  const [group, setGroup] = useState("All");
+  const [business, setBusiness] = useState(() => searchParams.get("business") || "All");
+  const [discipline, setDiscipline] = useState(() => searchParams.get("discipline_id") || "All");
+  const [group, setGroup] = useState(() => searchParams.get("product_group_id") || "All");
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +21,6 @@ export default function ProductsPage() {
   const [showEnquiry, setShowEnquiry] = useState(false);
   const [enquirySent, setEnquirySent] = useState(false);
   const [enquiryForm, setEnquiryForm] = useState({ name: "", company: "", email: "", message: "" });
-  const [videoOpen, setVideoOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(60);
   const loadMoreRef = useRef(null);
 
@@ -38,13 +40,35 @@ export default function ProductsPage() {
   useEffect(() => {
     if (activeProduct) {
       setDrawerVisible(false);
-      setVideoOpen(false);
       const id = requestAnimationFrame(() => setDrawerVisible(true));
       return () => cancelAnimationFrame(id);
     }
     setDrawerVisible(false);
-    setVideoOpen(false);
   }, [activeProduct]);
+
+  useEffect(() => {
+    setBusiness(searchParams.get("business") || "All");
+    setDiscipline(searchParams.get("discipline_id") || "All");
+    setGroup(searchParams.get("product_group_id") || "All");
+  }, [searchParams]);
+
+  const updateProductUrl = (next) => {
+    const params = new URLSearchParams(searchParams);
+    const nextBusiness = next.business ?? business;
+    const nextDiscipline = next.discipline ?? discipline;
+    const nextGroup = next.group ?? group;
+
+    if (nextBusiness && nextBusiness !== "All") params.set("business", nextBusiness);
+    else params.delete("business");
+
+    if (nextDiscipline && nextDiscipline !== "All") params.set("discipline_id", nextDiscipline);
+    else params.delete("discipline_id");
+
+    if (nextGroup && nextGroup !== "All") params.set("product_group_id", nextGroup);
+    else params.delete("product_group_id");
+
+    setSearchParams(params, { replace: false });
+  };
 
   const toProductImageUrl = (rawValue) => {
     const rawImage = String(rawValue || "").trim();
@@ -66,12 +90,14 @@ export default function ProductsPage() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok || data?.ok === false) throw new Error(data?.error || "Failed to load products.");
         const all = Array.isArray(data?.items) ? data.items : [];
-        const syntecScientific = all.filter((p) => String(p.business || "").trim() === "Syntec Scientific");
-        const normalized = syntecScientific.map((p) => ({
+        const normalized = all.map((p) => ({
           id: p.product_id,
           name: p.product_name || "(no name)",
+          business: String(p.business || "(no business)").trim(),
           discipline: p.discipline || "(no discipline)",
+          disciplineId: String(p.discipline_id || "").trim(),
           group: p.product_group || "(no group)",
+          groupId: String(p.product_group_id || "").trim(),
           supplier: p.supplier_name_join || p.supplier_id || "(no supplier)",
           about: String(p.about_2 || p.about_1 || ""),
           about1: String(p.about_1 || ""),
@@ -99,27 +125,46 @@ export default function ProductsPage() {
     };
   }, [lang]);
 
-  const disciplines = useMemo(() => ["All", ...Array.from(new Set(products.map((p) => p.discipline)))], [products]);
+  const disciplines = useMemo(() => {
+    const src = business === "All" ? products : products.filter((p) => p.business === business);
+    const seen = new Map();
+    src.forEach((p) => {
+      const key = p.disciplineId || p.discipline;
+      if (key && !seen.has(key)) seen.set(key, p.discipline);
+    });
+    return [{ value: "All", label: "All" }, ...Array.from(seen, ([value, label]) => ({ value, label }))];
+  }, [business, products]);
   const groups = useMemo(() => {
-    const src = discipline === "All" ? products : products.filter((p) => p.discipline === discipline);
-    return ["All", ...Array.from(new Set(src.map((p) => p.group)))];
-  }, [discipline, products]);
+    const src = products.filter((p) => {
+      if (business !== "All" && p.business !== business) return false;
+      if (discipline !== "All" && (p.disciplineId || p.discipline) !== discipline) return false;
+      return true;
+    });
+    const seen = new Map();
+    src.forEach((p) => {
+      const key = p.groupId || p.group;
+      if (key && !seen.has(key)) seen.set(key, p.group);
+    });
+    return [{ value: "All", label: "All" }, ...Array.from(seen, ([value, label]) => ({ value, label }))];
+  }, [business, discipline, products]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
-      if (discipline !== "All" && p.discipline !== discipline) return false;
-      if (group !== "All" && p.group !== group) return false;
+      if (business !== "All" && p.business !== business) return false;
+      if (discipline !== "All" && (p.disciplineId || p.discipline) !== discipline) return false;
+      if (group !== "All" && (p.groupId || p.group) !== group) return false;
       if (!q) return true;
-      return [p.id, p.name, p.supplier, p.group, p.discipline, p.about1, p.about2].some((v) => String(v).toLowerCase().includes(q));
+      return [p.id, p.name, p.supplier, p.group, p.discipline, p.business, p.about1, p.about2].some((v) => String(v).toLowerCase().includes(q));
     });
-  }, [discipline, group, query, products]);
+  }, [business, discipline, group, query, products]);
 
   const visibleProducts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const businessLabel = business === "All" ? "Syntec" : business;
 
   useEffect(() => {
     setVisibleCount(60);
-  }, [discipline, group, query, lang]);
+  }, [business, discipline, group, query, lang]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -137,15 +182,18 @@ export default function ProductsPage() {
   }, [filtered.length]);
 
   const toggleLegacyAccordion = (event) => {
-    const trigger = event.target.closest("[data-toggle='collapse'], .panel-title a");
+    const source = event.target instanceof Element ? event.target : event.target?.parentElement;
+    if (!source) return;
+    const trigger = source.closest("[data-toggle='collapse'], .panel-title a, .panel-heading, .panel-title");
     if (!trigger) return;
     event.preventDefault();
     const root = event.currentTarget;
     const panel = trigger.closest(".panel");
+    const clickable = panel?.querySelector("[data-toggle='collapse'], .panel-title a") || trigger;
     const targetRef = (
-      trigger.getAttribute("data-target") ||
-      trigger.getAttribute("href") ||
-      trigger.getAttribute("aria-controls") ||
+      clickable.getAttribute("data-target") ||
+      clickable.getAttribute("href") ||
+      clickable.getAttribute("aria-controls") ||
       ""
     ).trim();
     const hashRef = targetRef.includes("#") ? `#${targetRef.split("#").pop()}` : targetRef;
@@ -174,22 +222,32 @@ export default function ProductsPage() {
     target.style.height = "";
     target.style.display = !isOpen ? "block" : "none";
     target.setAttribute("aria-expanded", String(!isOpen));
-    trigger.classList.toggle("collapsed", isOpen);
-    trigger.setAttribute("aria-expanded", String(!isOpen));
-    const triggerText = (trigger.textContent || "").toLowerCase();
+    clickable.classList.toggle("collapsed", isOpen);
+    clickable.setAttribute("aria-expanded", String(!isOpen));
+    const triggerText = (clickable.textContent || trigger.textContent || "").toLowerCase();
     if (!isOpen && triggerText.includes("video")) {
-      const media = extractLegacyMedia(activeProduct?.aboutHtml || "");
-      if (media.mp4) {
-        const panelBody = target.querySelector(".panel-body") || target;
-        if (!panelBody.querySelector("video[data-recovered='1']")) {
-          const wrapper = document.createElement("div");
-          wrapper.className = "legacy-video-recovered";
-          wrapper.innerHTML = `
-            <video data-recovered="1" ${media.poster ? `poster="${media.poster}"` : ""} controls style="max-width: 100%; height: auto;">
-              <source src="${media.mp4}" type="video/mp4" />
-            </video>
-          `;
-          panelBody.appendChild(wrapper);
+      const panelBody = target.querySelector(".panel-body") || target;
+      if (!panelBody.querySelector("video, iframe")) {
+        const videos = extractLegacyMediaItems(activeProduct?.aboutHtml || "");
+        if (videos.length) {
+          const stack = document.createElement("div");
+          stack.className = "legacy-video-stack";
+          stack.style.display = "grid";
+          stack.style.gap = "1rem";
+          videos.forEach((media) => {
+            if (!media.mp4) return;
+            const item = document.createElement("div");
+            item.className = "post-item legacy-video-item";
+            item.innerHTML = `
+              <div class="post-image" style="text-align: center;">
+                <video ${media.poster ? `poster="${media.poster}"` : ""} controls style="display: block; width: 100%; max-width: 760px; height: auto; margin: 0 auto; background: #000;">
+                  <source src="${media.mp4}" type="video/mp4">
+                </video>
+              </div>
+            `;
+            stack.appendChild(item);
+          });
+          if (stack.children.length) panelBody.appendChild(stack);
         }
       }
     }
@@ -251,25 +309,33 @@ export default function ProductsPage() {
     }
     return "";
   };
-  const extractLegacyMedia = (raw) => {
+  const extractLegacyMediaItems = (raw) => {
     const decoded = decodeHtml(raw);
-    const find = (re) => {
-      const m = decoded.match(re);
-      return m ? m[0] : "";
-    };
-    const mp4Raw = find(/(?:#WORKSPACE_FILES#assets\/|\/assets\/)[^"'\s>]+\.mp4/i);
-    const posterRaw = find(/(?:#WORKSPACE_FILES#assets\/|\/assets\/)[^"'\s>]+\.jpg/i);
-    return {
-      mp4: mp4Raw ? mp4Raw.replace(/^#WORKSPACE_FILES#assets\//i, "/assets/") : "",
-      poster: posterRaw ? posterRaw.replace(/^#WORKSPACE_FILES#assets\//i, "/assets/") : "",
-    };
+    const normalize = (value) =>
+      String(value || "")
+        .replace(/^#WORKSPACE_FILES#\/?assets\//i, "/assets/")
+        .replace(/^#WORKSPACE_FILES#\/?images\//i, "/assets/images/")
+        .replace(/ /g, "%20");
+    const sourceMatches = [...decoded.matchAll(/(?:#WORKSPACE_FILES#\/?(?:assets|images)\/|\/assets\/)[^"'>]+?\.mp4/gi)].map((m) => normalize(m[0]));
+    const posterMatches = [...decoded.matchAll(/(?:#WORKSPACE_FILES#\/?(?:assets|images)\/|\/assets\/)[^"'>]+?\.(?:jpg|jpeg|png|webp)/gi)].map((m) => normalize(m[0]));
+    const seen = new Set();
+    return sourceMatches
+      .map((mp4, index) => ({
+        mp4,
+        poster: posterMatches[index] || posterMatches[0] || "",
+      }))
+      .filter((media) => {
+        if (!media.mp4 || seen.has(media.mp4)) return false;
+        seen.add(media.mp4);
+        return true;
+      });
   };
-  const extractLegacyVideoTitle = (raw, fallbackName) => {
-    const decoded = decodeHtml(raw);
-    const m = decoded.match(/<a[^>]*>\s*(?:<[^>]+>\s*)*([^<]*?video)\s*<\/a>/i);
-    const title = (m?.[1] || "").replace(/\s+/g, " ").trim();
-    if (title) return title;
-    return `${fallbackName} Video`;
+  const extractLegacyMedia = (raw) => {
+    const first = extractLegacyMediaItems(raw)[0] || {};
+    return {
+      mp4: first.mp4 || "",
+      poster: first.poster || "",
+    };
   };
   const renderRichHtml = (raw) => {
     const decoded = decodeHtml(raw);
@@ -288,10 +354,14 @@ export default function ProductsPage() {
       const withoutWorkspace = rawPath.replace(/^#WORKSPACE_FILES#\/?/i, "");
       if (withoutWorkspace === rawPath && (rawPath.startsWith("http") || rawPath.startsWith("mailto:") || rawPath.startsWith("#"))) return rawPath;
       const clean = withoutWorkspace.replace(/^\/+/, "");
-      if (clean.startsWith("assets/")) return `/${clean}`;
-      if (clean.startsWith("images/")) return `/assets/${clean}`;
-      if (clean.startsWith("Scientific/") || clean.startsWith("International/") || clean.startsWith("SysLabs/")) return `/assets/images/${clean}`;
-      return clean;
+      const localPath = clean.startsWith("assets/")
+        ? `/${clean}`
+        : clean.startsWith("images/")
+          ? `/assets/${clean}`
+          : clean.startsWith("Scientific/") || clean.startsWith("International/") || clean.startsWith("SysLabs/")
+            ? `/assets/images/${clean}`
+            : clean;
+      return localPath.replace(/ /g, "%20");
     };
     doc.querySelectorAll("img[src]").forEach((el) => {
       const normalized = normalizeLegacyAssetPath(el.getAttribute("src"));
@@ -305,9 +375,6 @@ export default function ProductsPage() {
       const normalized = normalizeLegacyAssetPath(el.getAttribute("poster"));
       if (normalized) el.setAttribute("poster", normalized);
     });
-    doc.querySelectorAll("video").forEach((videoEl) => {
-      videoEl.remove();
-    });
     doc.querySelectorAll(".panel-collapse").forEach((el) => {
       el.classList.remove("show", "in", "active");
       el.style.display = "none";
@@ -319,7 +386,63 @@ export default function ProductsPage() {
     });
     Array.from(doc.querySelectorAll(".panel")).forEach((panel) => {
       const title = (panel.querySelector(".panel-title a, .panel-title")?.textContent || "").toLowerCase();
-      if (title.includes("video")) panel.remove();
+      if (!title.includes("video")) return;
+      const label = (panel.querySelector(".panel-title a, .panel-title")?.textContent || "Video").trim();
+      const details = doc.createElement("details");
+      details.className = "legacy-video-details";
+      const summary = doc.createElement("summary");
+      summary.className = "legacy-video-summary";
+      summary.innerHTML = `${iconSvgForToken("lucide:video") || ""}<span>${label}</span>`;
+      const body = doc.createElement("div");
+      body.className = "legacy-video-details-body";
+      const stack = doc.createElement("div");
+      stack.className = "legacy-video-stack";
+      extractLegacyMediaItems(decoded).forEach((media) => {
+        if (!media.mp4) return;
+        const item = doc.createElement("div");
+        item.className = "post-item legacy-video-item";
+        item.innerHTML = `
+          <div class="post-image" style="text-align: center;">
+            <video ${media.poster ? `poster="${media.poster}"` : ""} controls style="display: block; width: 100%; max-width: 760px; height: auto; margin: 0 auto; background: #000;">
+              <source src="${media.mp4}" type="video/mp4">
+            </video>
+          </div>
+        `;
+        stack.appendChild(item);
+      });
+      if (stack.children.length) {
+        const misplaced = Array.from(panel.querySelectorAll("#specs, main-flip"));
+        body.appendChild(stack);
+        details.appendChild(summary);
+        details.appendChild(body);
+        panel.replaceWith(details);
+        let insertAfter = details;
+        misplaced.forEach((node) => {
+          const parent = insertAfter.parentNode || doc.body;
+          parent.insertBefore(node, insertAfter.nextSibling);
+          insertAfter = node;
+        });
+      } else {
+        panel.remove();
+      }
+
+      panel.querySelectorAll(".panel-body .panel-body").forEach((nestedBody) => {
+        const parent = nestedBody.parentNode;
+        if (!parent) return;
+        while (nestedBody.firstChild) parent.insertBefore(nestedBody.firstChild, nestedBody);
+        nestedBody.remove();
+      });
+
+      const accordion = panel.closest(".panel-group, .accordion") || panel;
+      const misplaced = Array.from(panel.querySelectorAll("#specs, main-flip"));
+      if (!misplaced.length) return;
+
+      let insertAfter = accordion;
+      misplaced.forEach((node) => {
+        const parent = insertAfter.parentNode || doc.body;
+        parent.insertBefore(node, insertAfter.nextSibling);
+        insertAfter = node;
+      });
     });
     doc.querySelectorAll("a[href]").forEach((el) => {
       const normalized = normalizeLegacyAssetPath(el.getAttribute("href"));
@@ -342,7 +465,7 @@ export default function ProductsPage() {
   return (
     <section className="relative flex h-[calc(100vh-150px)] min-h-[560px] flex-col overflow-hidden rounded border border-slate-300 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-gradient-to-r from-[#e9f2fb] to-[#f7fbff] px-6 py-6">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e78bc]">Syntec Scientific</p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e78bc]">{businessLabel}</p>
         <h1 className="mt-2 text-3xl font-black text-[#113255]">Products Catalogue</h1>
         <p className="mt-2 max-w-3xl text-slate-700">Discover premium scientific instruments, products and services organised by discipline and product group.</p>
       </div>
@@ -352,13 +475,28 @@ export default function ProductsPage() {
           <h2 className="text-sm font-extrabold uppercase tracking-[0.1em] text-[#2d4a67]">Filter Products</h2>
 
           <label className="mt-4 block text-xs font-bold uppercase tracking-[0.08em] text-slate-600">Discipline</label>
-          <select className="mt-1 h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm" value={discipline} onChange={(e) => { setDiscipline(e.target.value); setGroup("All"); }}>
-            {disciplines.map((d) => <option key={d} value={d}>{d}</option>)}
+          <select
+            className="mt-1 h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm"
+            value={discipline}
+            onChange={(e) => {
+              setDiscipline(e.target.value);
+              setGroup("All");
+              updateProductUrl({ discipline: e.target.value, group: "All" });
+            }}
+          >
+            {disciplines.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
           </select>
 
           <label className="mt-4 block text-xs font-bold uppercase tracking-[0.08em] text-slate-600">Product Group</label>
-          <select className="mt-1 h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm" value={group} onChange={(e) => setGroup(e.target.value)}>
-            {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+          <select
+            className="mt-1 h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm"
+            value={group}
+            onChange={(e) => {
+              setGroup(e.target.value);
+              updateProductUrl({ group: e.target.value });
+            }}
+          >
+            {groups.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
           </select>
 
           <label className="mt-4 block text-xs font-bold uppercase tracking-[0.08em] text-slate-600">Search</label>
@@ -385,7 +523,7 @@ export default function ProductsPage() {
 
         <div className="min-h-0 overflow-y-auto p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-[#173a61]">Syntec Scientific Products</h3>
+            <h3 className="text-lg font-bold text-[#173a61]">{business === "All" ? "Syntec Products" : `${business} Products`}</h3>
             <span className="rounded-full bg-[#e8f3ff] px-3 py-1 text-xs font-bold text-[#2e78bc]">{filtered.length} results</span>
           </div>
           {loading ? <p className="mb-4 text-sm text-slate-600">Loading products...</p> : null}
@@ -402,7 +540,7 @@ export default function ProductsPage() {
                     <span className="rounded bg-[#e8f3ff] px-2.5 py-1 text-xs font-bold uppercase text-[#2e78bc]">{p.discipline}</span>
                     <span className="rounded bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-600">{p.group}</span>
                   </div>
-                  <h4 className="line-clamp-2 border-l-4 border-[#5ca2ea] pl-2 text-base font-bold text-[#173a61]">{p.name}</h4>
+                  <h4 className="line-clamp-2 border-l-[6px] border-[#5ca2ea] pl-2 text-base font-bold text-[#173a61]">{p.name}</h4>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-slate-900">{p.supplier}</p>
                     {toSupplierLogoUrl(p.supplierLogo) ? (
@@ -452,7 +590,7 @@ export default function ProductsPage() {
               >
                 <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 border-t-4 border-t-[#5ca2ea] bg-gradient-to-b from-[#f8fbff] to-[#eef4fa] px-5 py-3 shadow-[inset_0_1px_0_#ffffff]">
                   <div className="min-w-0 flex-1">
-                    <h3 className="border-l-4 border-[#5ca2ea] pl-3 text-xl font-black leading-tight text-[#173a61]">{activeProduct.name}</h3>
+                    <h3 className="border-l-[6px] border-[#5ca2ea] pl-3 text-xl font-black leading-tight text-[#173a61]">{activeProduct.name}</h3>
                     <p className="mt-2 text-base font-bold text-slate-900">{activeProduct.supplier}</p>
                   </div>
                   {toSupplierLogoUrl(activeProduct.supplierLogo) ? (
@@ -497,38 +635,13 @@ export default function ProductsPage() {
                     <>
                       {(() => {
                         const renderedAbout = renderRichHtml(activeProduct.aboutHtml);
-                        const media = extractLegacyMedia(activeProduct.aboutHtml);
-                        const videoTitle = extractLegacyVideoTitle(activeProduct.aboutHtml, activeProduct.name);
                         return (
                           <>
                             <div
                               className="legacy-products-content max-w-none text-slate-700"
-                              onClick={toggleLegacyAccordion}
+                              onClickCapture={toggleLegacyAccordion}
                               dangerouslySetInnerHTML={{ __html: renderedAbout }}
                             />
-                            {media.mp4 ? (
-                              <div className="rounded border border-slate-300 bg-[#dcdcdc]">
-                                <button
-                                  type="button"
-                                  className="flex w-full items-center justify-between px-4 py-3 text-left text-base font-extrabold text-slate-900"
-                                  onClick={() => setVideoOpen((v) => !v)}
-                                  aria-expanded={videoOpen}
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <LucideIcons.Video className="h-4 w-4 text-cyan-700" />
-                                    {videoTitle}
-                                  </span>
-                                  <LucideIcons.ChevronDown className={`h-4 w-4 text-slate-700 transition-transform ${videoOpen ? "rotate-180" : ""}`} />
-                                </button>
-                                {videoOpen ? (
-                                  <div className="border-t border-slate-300 bg-white p-3">
-                                    <video controls poster={media.poster || undefined} className="mx-auto block h-auto w-full max-w-[760px] bg-black">
-                                      <source src={media.mp4} type="video/mp4" />
-                                    </video>
-                                  </div>
-                                ) : null}
-                              </div>
-                            ) : null}
                           </>
                         );
                       })()}

@@ -19,8 +19,19 @@ function kebabToPascal(name) {
     .join("");
 }
 
-function IconMark({ iconClass, className = "" }) {
+function normalizeIconClass(iconClass) {
   const raw = (iconClass || "").toLowerCase().trim();
+  if (!raw) return "";
+  if (raw.includes(":")) return raw;
+
+  const legacyMap = [
+    ["fa-syringe", "lucide:syringe"],
+  ];
+  return legacyMap.find(([legacy]) => raw.includes(legacy))?.[1] || raw;
+}
+
+function IconMark({ iconClass, className = "" }) {
+  const raw = normalizeIconClass(iconClass);
   if (!raw) {
     return <span className={className}>•</span>;
   }
@@ -196,6 +207,23 @@ export default function MegaMenu({ items = [], onMenuClick }) {
     return cols;
   }, [l1]);
 
+  const megaColumns = useMemo(() => {
+    const hasTaggedGroups = [1, 2, 3, 4].some((k) => groupedCols[k].length > 0);
+    if (hasTaggedGroups) {
+      return [1, 2, 3, 4].filter((k) => groupedCols[k].length > 0).map((k) => groupedCols[k]);
+    }
+
+    if (!l1.length) return [];
+
+    // Legacy-safe fallback: untagged L1 groups are columns, as used by Syntec International.
+    const targetCols = Math.min(4, l1.length);
+    const cols = Array.from({ length: targetCols }, () => []);
+    l1.forEach((item, idx) => {
+      cols[idx % targetCols].push(item);
+    });
+    return cols;
+  }, [groupedCols, l1]);
+
   const blobTargetId = hoveredTabId || selectedL0Id;
   const [blobStyle, setBlobStyle] = useState({ left: 0, width: 176 });
 
@@ -308,10 +336,13 @@ export default function MegaMenu({ items = [], onMenuClick }) {
                 <div className="absolute left-0 top-0 h-[2px] w-full overflow-hidden">
                   <div className="h-full w-full bg-lime-500" />
                 </div>
-                <div className="grid grid-cols-4">
-                  {[1, 2, 3, 4].map((colNo) => (
-                    <div key={colNo} className="border-r border-slate-300 p-4 last:border-r-0">
-                      {groupedCols[colNo].map((group) => (
+                <div
+                  className="grid"
+                  style={{ gridTemplateColumns: `repeat(${Math.max(1, megaColumns.length)}, minmax(0, 1fr))` }}
+                >
+                  {megaColumns.map((colGroups, colIdx) => (
+                    <div key={`mega-col-${colIdx}`} className="border-r border-slate-300 p-4 last:border-r-0">
+                      {colGroups.map((group) => (
                         <div key={group.id} className="mb-6">
                           <h4 className="inline-flex items-center gap-2 text-[13px] font-bold tracking-[0.01em] text-slate-600">
                             <span className="inline-flex w-5 shrink-0 justify-center">
