@@ -5,6 +5,7 @@ import ContactPage from "./pages/ContactPage";
 import HomePage from "./pages/HomePage";
 import LookupAdminPage from "./pages/LookupAdminPage";
 import MenuAdminPage from "./pages/MenuAdminPage";
+import MenuTargetPage from "./pages/MenuTargetPage";
 import ProductsAdminPage from "./pages/ProductsAdminPage";
 import ProductsPage from "./pages/ProductsPage";
 import SuppliersAdminPage from "./pages/SuppliersAdminPage";
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="/admin/languages" element={<LanguagesAdminPage />} />
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/menu-target" element={<MenuTargetPage />} />
           <Route path="/suppliers" element={<SuppliersPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/contact" element={<ContactPage />} />

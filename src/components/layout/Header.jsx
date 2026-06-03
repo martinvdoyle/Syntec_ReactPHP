@@ -16,6 +16,7 @@ export default function Header() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuItems, setMenuItems] = useState(menuSeed);
+  const [selectedMenuItemId, setSelectedMenuItemId] = useState(() => Number(localStorage.getItem("syntec_selected_menu_item_id") || 0) || null);
   const [isSticky, setIsSticky] = useState(false);
   const [languageOptions, setLanguageOptions] = useState([]);
   const [lang, setLang] = useState(() => localStorage.getItem("syntec_lang") || "en");
@@ -105,7 +106,6 @@ export default function Header() {
     let website = rawWebsiteSet || rawWebsite;
     let business = rawBusinessSet || rawBusiness;
 
-    // Legacy Group menu L0 rows can omit website_set/business_set; infer target context by L0 title.
     if (!rawWebsiteSet && rawWebsite === "Syntec Group") {
       if (title === "Syntec Scientific" || title === "SyS Laboratories") {
         website = "Syntec Scientific";
@@ -125,16 +125,19 @@ export default function Header() {
     else nextContext = "Ireland";
 
     e?.preventDefault?.();
+    setSelectedMenuItemId(item?.id ? Number(item.id) : null);
+    localStorage.setItem("syntec_selected_menu_item_id", String(item?.id || ""));
     setMenuContext(nextContext);
     localStorage.setItem("syntec_menu_context", nextContext);
     loadMenu(nextContext);
 
-    if (website === "Syntec Group" || title === "Syntec Group") navigate("/");
-    else if (website === "Syntec International" || title === "Syntec International") navigate("/international");
-    else if (title === "SyS Laboratories") navigate("/sys-laboratories");
-    else if (title === "Suppliers") navigate("/suppliers");
-    else if (title === "About Us" || title === "About") navigate("/about");
-    else navigate("/products");
+    const params = new URLSearchParams({
+      item_id: String(item?.id || ""),
+      website: website || "Syntec Scientific",
+      business: business || "Ireland",
+      target_url: String(item?.url || ""),
+    });
+    navigate(`/menu-target?${params.toString()}`);
   };
 
   return (
@@ -165,7 +168,7 @@ export default function Header() {
 
             <div className="relative z-50 hidden min-w-0 lg:block">
               <div className="mx-auto w-full">
-                <MegaMenu items={rootItems} onMenuClick={handleMenuClick} />
+                <MegaMenu items={rootItems} onMenuClick={handleMenuClick} selectedItemId={selectedMenuItemId} />
               </div>
             </div>
 
@@ -236,7 +239,7 @@ export default function Header() {
             </div>
         </div>
       </div>
-      <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} items={menuItems} />
+      <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} onMenuClick={handleMenuClick} items={menuItems} />
     </header>
   );
 }

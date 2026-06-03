@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-function MobileNode({ item, onClose, level = 0 }) {
+function MobileNode({ item, onClose, onMenuClick, level = 0 }) {
   const [open, setOpen] = useState(false);
   const hasChildren = Array.isArray(item.children) && item.children.length > 0;
 
@@ -12,7 +12,10 @@ function MobileNode({ item, onClose, level = 0 }) {
           className="block flex-1 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
           style={{ paddingLeft: `${12 + level * 14}px` }}
           to={item.route || item.url || "#"}
-          onClick={onClose}
+          onClick={(e) => {
+            onMenuClick?.(item, e);
+            onClose?.();
+          }}
         >
           {item.title}
         </Link>
@@ -25,7 +28,7 @@ function MobileNode({ item, onClose, level = 0 }) {
       {hasChildren && open ? (
         <ul className="space-y-1">
           {item.children.map((child) => (
-            <MobileNode key={child.id} item={child} onClose={onClose} level={level + 1} />
+            <MobileNode key={child.id} item={child} onClose={onClose} onMenuClick={onMenuClick} level={level + 1} />
           ))}
         </ul>
       ) : null}
@@ -33,7 +36,7 @@ function MobileNode({ item, onClose, level = 0 }) {
   );
 }
 
-export default function MobileMenu({ isOpen, onClose, items = [] }) {
+export default function MobileMenu({ isOpen, onClose, onMenuClick, items = [] }) {
   if (!isOpen) return null;
 
   return (
@@ -41,7 +44,7 @@ export default function MobileMenu({ isOpen, onClose, items = [] }) {
       <div className="mx-auto max-w-7xl px-4 py-3">
         <ul className="space-y-1">
           {items.map((item) => (
-            <MobileNode key={item.id} item={item} onClose={onClose} />
+            <MobileNode key={item.id} item={item} onClose={onClose} onMenuClick={onMenuClick} />
           ))}
         </ul>
       </div>

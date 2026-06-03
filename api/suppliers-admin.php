@@ -26,8 +26,8 @@ function sanitizeAnchorId($value): ?string {
     $s = trim((string)$value);
     if ($s === '') return null;
     $s = strtolower($s);
-    $s = str_replace([' ', '/'], '-', $s);
-    $s = preg_replace('/[^a-z0-9_-]+/', '-', $s) ?? '';
+    $s = str_replace([' ', '/', '_'], '-', $s);
+    $s = preg_replace('/[^a-z0-9-]+/', '-', $s) ?? '';
     $s = preg_replace('/-+/', '-', $s) ?? '';
     $s = trim($s, '-');
     return $s === '' ? null : $s;

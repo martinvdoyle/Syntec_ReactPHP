@@ -58,19 +58,34 @@ function groupIcon(group) {
   return firstChildWithIcon?.iconClass || "";
 }
 
-function CascadeCol({ items, onHover, activeId }) {
+function findItemPath(items, targetId, parentPath = []) {
+  for (const item of items) {
+    const nextPath = [...parentPath, item];
+    if (item.id === targetId) return nextPath;
+    const childPath = findItemPath(item.children || [], targetId, nextPath);
+    if (childPath.length) return childPath;
+  }
+  return [];
+}
+
+function CascadeCol({ items, onHover, activeId, selectedId, onMenuClick }) {
   return (
     <ul className="min-w-[230px] border border-slate-200 bg-[#f3f5f7] shadow-lg">
       {items.map((it) => {
         const hasChildren = !!it.children?.length;
         const active = activeId === it.id;
+        const selected = selectedId === it.id;
         return (
           <li
             key={it.id}
             onMouseEnter={() => onHover(it)}
-            className={`border-b border-slate-200 last:border-b-0 ${active ? "bg-white" : ""}`}
+            className={`border-b border-slate-200 last:border-b-0 ${(active || selected) ? "bg-white" : ""}`}
           >
-            <Link to={it.url || "#"} className="flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] text-slate-700">
+            <Link
+              to={it.url || "#"}
+              onClick={(e) => onMenuClick?.(it, e)}
+              className={`flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] ${(active || selected) ? "text-[var(--syntec-blue)]" : "text-slate-700"}`}
+            >
               <span className="flex items-center gap-2">
                 <IconMark iconClass={it.iconClass} className="h-4 w-4 text-[var(--syntec-blue)]" />
                 {rowTitle(it)}
@@ -84,7 +99,7 @@ function CascadeCol({ items, onHover, activeId }) {
   );
 }
 
-function StandardCascade({ items = [], onClose }) {
+function StandardCascade({ items = [], onClose, onMenuClick, selectedIds = {} }) {
   const [l1Id, setL1Id] = useState(null);
   const [l2Id, setL2Id] = useState(null);
   const [l1Top, setL1Top] = useState(0);
@@ -104,7 +119,7 @@ function StandardCascade({ items = [], onClose }) {
         {items.map((c) => (
           <li
             key={c.id}
-            className="border-b border-slate-200 last:border-b-0"
+            className={`border-b border-slate-200 last:border-b-0 ${selectedIds.L1 === c.id ? "bg-white" : ""}`}
             onMouseEnter={(e) => {
               setL1Id(c.id);
               setL2Id(null);
@@ -112,7 +127,11 @@ function StandardCascade({ items = [], onClose }) {
               setL3Top(0);
             }}
           >
-            <Link to={c.url || "#"} className="flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] text-slate-700 hover:bg-white">
+            <Link
+              to={c.url || "#"}
+              onClick={(e) => onMenuClick?.(c, e)}
+              className={`flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] hover:bg-white ${selectedIds.L1 === c.id ? "text-[var(--syntec-blue)]" : "text-slate-700"}`}
+            >
               <span className="flex items-center gap-2">
                 <span className="inline-flex w-5 shrink-0 justify-center">
                   <IconMark iconClass={c.iconClass} className="h-4 w-4 text-[var(--syntec-blue)]" />
@@ -133,7 +152,7 @@ function StandardCascade({ items = [], onClose }) {
           {l2Items.map((c) => (
             <li
               key={c.id}
-              className="border-b border-slate-200 last:border-b-0"
+              className={`border-b border-slate-200 last:border-b-0 ${selectedIds.L2 === c.id ? "bg-white" : ""}`}
               onMouseEnter={(e) => {
                 setL2Id(c.id);
                 const wrapTop = wrapRef.current?.getBoundingClientRect().top ?? 0;
@@ -141,7 +160,11 @@ function StandardCascade({ items = [], onClose }) {
                 setL3Top(Math.max(0, rowTop - wrapTop));
               }}
             >
-              <Link to={c.url || "#"} className="flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] text-slate-700 hover:bg-white">
+              <Link
+                to={c.url || "#"}
+                onClick={(e) => onMenuClick?.(c, e)}
+                className={`flex items-center justify-between px-4 py-3 text-[15px] font-semibold tracking-[0.005em] hover:bg-white ${selectedIds.L2 === c.id ? "text-[var(--syntec-blue)]" : "text-slate-700"}`}
+              >
                 <span className="flex items-center gap-2">
                   <span className="inline-flex w-5 shrink-0 justify-center">
                     <IconMark iconClass={c.iconClass} className="h-4 w-4 text-[var(--syntec-blue)]" />
@@ -161,8 +184,12 @@ function StandardCascade({ items = [], onClose }) {
           style={{ marginTop: `${l3Top}px` }}
         >
           {l3Items.map((c) => (
-            <li key={c.id} className="border-b border-slate-200 last:border-b-0">
-              <Link to={c.url || "#"} className="flex items-center gap-2 px-4 py-3 text-[15px] font-semibold tracking-[0.005em] text-slate-700 hover:bg-white">
+            <li key={c.id} className={`border-b border-slate-200 last:border-b-0 ${selectedIds.L3 === c.id ? "bg-white" : ""}`}>
+              <Link
+                to={c.url || "#"}
+                onClick={(e) => onMenuClick?.(c, e)}
+                className={`flex items-center gap-2 px-4 py-3 text-[15px] font-semibold tracking-[0.005em] hover:bg-white ${selectedIds.L3 === c.id ? "text-[var(--syntec-blue)]" : "text-slate-700"}`}
+              >
                 <span className="inline-flex w-5 shrink-0 justify-center">
                   <IconMark iconClass={c.iconClass} className="h-4 w-4 text-[var(--syntec-blue)]" />
                 </span>
@@ -179,7 +206,7 @@ function StandardCascade({ items = [], onClose }) {
   );
 }
 
-export default function MegaMenu({ items = [], onMenuClick }) {
+export default function MegaMenu({ items = [], onMenuClick, selectedItemId = null }) {
   const l0Items = useMemo(() => items.filter((i) => i.menuLevel === "L0"), [items]);
   const [hoveredTabId, setHoveredTabId] = useState(null);
   const [activeL0Id, setActiveL0Id] = useState(null);
@@ -187,6 +214,7 @@ export default function MegaMenu({ items = [], onMenuClick }) {
   const [activeL2Id, setActiveL2Id] = useState(null);
   const [activeStdId, setActiveStdId] = useState(null);
   const [selectedL0Id, setSelectedL0Id] = useState(null);
+  const [selectedPathIds, setSelectedPathIds] = useState({});
   const itemRefs = useRef(new Map());
 
   const activeL0 = l0Items.find((i) => i.id === activeL0Id) || null;
@@ -229,8 +257,27 @@ export default function MegaMenu({ items = [], onMenuClick }) {
 
   useEffect(() => {
     setSelectedL0Id(null);
+    setSelectedPathIds({});
     setHoveredTabId(null);
   }, [items]);
+
+  useEffect(() => {
+    if (!selectedItemId) return;
+    const path = findItemPath(l0Items, Number(selectedItemId));
+    if (!path.length) return;
+
+    const nextSelected = {};
+    path.forEach((node, index) => {
+      nextSelected[`L${index}`] = node.id;
+    });
+
+    setSelectedPathIds(nextSelected);
+    setSelectedL0Id(path[0]?.id ?? null);
+    setActiveL0Id(path[0] && isMega(path[0]) ? path[0].id : null);
+    setActiveStdId(path[0] && !isMega(path[0]) ? path[0].id : null);
+    setActiveL1Id(path[1]?.id ?? null);
+    setActiveL2Id(path[2]?.id ?? null);
+  }, [selectedItemId, l0Items]);
 
   useEffect(() => {
     if (!blobTargetId) return;
@@ -240,6 +287,27 @@ export default function MegaMenu({ items = [], onMenuClick }) {
   }, [blobTargetId, l0Items]);
 
   if (!l0Items.length) return null;
+
+  const handleItemClick = (item, e) => {
+    const path = findItemPath(l0Items, item?.id);
+    if (path.length) {
+      const nextSelected = {};
+      path.forEach((node, index) => {
+        nextSelected[`L${index}`] = node.id;
+      });
+      setSelectedPathIds(nextSelected);
+      setSelectedL0Id(path[0]?.id ?? null);
+      setActiveL0Id(path[0]?.id ?? null);
+      setActiveStdId(path[0] && !isMega(path[0]) ? path[0].id : null);
+      setActiveL1Id(path[1]?.id ?? null);
+      setActiveL2Id(path[2]?.id ?? null);
+    } else if (item?.id) {
+      setSelectedL0Id(item.id);
+      setSelectedPathIds({ L0: item.id });
+    }
+    setHoveredTabId(null);
+    onMenuClick?.(item, e);
+  };
 
   return (
     <div className="mega-concept-b relative hidden h-[78px] bg-transparent lg:block">
@@ -294,13 +362,13 @@ export default function MegaMenu({ items = [], onMenuClick }) {
               >
                 <Link
                   to={item.url || "#"}
-                  onClick={(e) => onMenuClick?.(item, e)}
+                  onClick={(e) => handleItemClick(item, e)}
                   className={`block whitespace-nowrap text-center leading-tight ${selected ? "text-white" : active ? "text-[var(--syntec-blue)]" : ""}`}
                 >
                   {rowTitle(item)}
                 </Link>
                 {!mega && activeStdId === item.id && item.children?.length ? (
-                  <StandardCascade items={item.children} onClose={() => setActiveStdId(null)} />
+                  <StandardCascade items={item.children} onClose={() => setActiveStdId(null)} onMenuClick={handleItemClick} selectedIds={selectedPathIds} />
                 ) : null}
               </li>
             );
@@ -320,9 +388,9 @@ export default function MegaMenu({ items = [], onMenuClick }) {
           <div className="w-full">
             {rowTitle(activeL0).toLowerCase() === "suppliers" ? (
               <div className="relative flex">
-                <CascadeCol items={l1} activeId={activeL1Id} onHover={(it) => { setActiveL1Id(it.id); setActiveL2Id(it.children?.[0]?.id ?? null); }} />
-                {l2.length ? <div className="ml-[1px]"><CascadeCol items={l2} activeId={activeL2Id} onHover={(it) => setActiveL2Id(it.id)} /></div> : null}
-                {l3.length ? <div className="ml-[1px]"><CascadeCol items={l3} activeId={null} onHover={() => {}} /></div> : null}
+                <CascadeCol items={l1} activeId={activeL1Id} selectedId={selectedPathIds.L1} onHover={(it) => { setActiveL1Id(it.id); setActiveL2Id(it.children?.[0]?.id ?? null); }} onMenuClick={handleItemClick} />
+                {l2.length ? <div className="ml-[1px]"><CascadeCol items={l2} activeId={activeL2Id} selectedId={selectedPathIds.L2} onHover={(it) => setActiveL2Id(it.id)} onMenuClick={handleItemClick} /></div> : null}
+                {l3.length ? <div className="ml-[1px]"><CascadeCol items={l3} activeId={null} selectedId={selectedPathIds.L3} onHover={() => {}} onMenuClick={handleItemClick} /></div> : null}
                 <div className="absolute -bottom-[10px] left-0 h-[10px] w-full overflow-hidden">
                   <div className="flex h-full w-full">
                     <span className="h-full w-1/3 bg-[#2f8ee5]" />
@@ -357,7 +425,11 @@ export default function MegaMenu({ items = [], onMenuClick }) {
                           <ul>
                             {(group.children || []).map((it) => (
                               <li key={it.id} className="border-b border-slate-200 py-2">
-                                <Link to={it.url || "#"} className="flex items-center gap-2 text-[15px] font-semibold tracking-[0.005em] text-slate-700">
+                                <Link
+                                  to={it.url || "#"}
+                                  onClick={(e) => handleItemClick(it, e)}
+                                  className={`flex items-center gap-2 text-[15px] font-semibold tracking-[0.005em] ${selectedPathIds.L1 === it.id || selectedPathIds.L2 === it.id || selectedPathIds.L3 === it.id ? "text-[var(--syntec-blue)]" : "text-slate-700"}`}
+                                >
                                   <span className="inline-flex w-5 shrink-0 justify-center">
                                     <IconMark iconClass={it.iconClass} className="h-[18px] w-[18px] text-[var(--syntec-blue)]" />
                                   </span>
